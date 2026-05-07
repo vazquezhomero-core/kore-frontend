@@ -73,14 +73,17 @@ export default function Page() {
     setError('');
 
     try {
-      // Crear empleado real en Supabase
+      // Generar email único para evitar conflictos
+      const emailUnico = `${nombreEmpleado.trim().toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@kore.demo`;
+      
       const res = await fetch(`${API}/empleados`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nombre: nombreEmpleado.trim(),
           empresa_id: empresaId,
-          email: null,
+          email: emailUnico,
+          fecha_ingreso: null,
         }),
       });
       const data = await res.json();
