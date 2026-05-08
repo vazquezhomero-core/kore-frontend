@@ -301,6 +301,11 @@ export default function Page() {
             padding: '4px 10px', borderRadius: 20,
             letterSpacing: '0.08em'
           }}>KORE OS</div>
+          <a href="/gestion" style={{
+            fontSize: 11, color: '#888', textDecoration: 'none',
+            border: '0.5px solid #333', borderRadius: 8,
+            padding: '4px 10px', whiteSpace: 'nowrap'
+          }}>Panel de gestión →</a>
         </div>
       </div>
 
