@@ -3,6 +3,20 @@ import { useState, useRef, useEffect } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://core-backend-production-9f3f.up.railway.app';
 
+const STORAGE_KEY = 'kore_sesion';
+
+function guardarSesion(datos) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(datos)); } catch {}
+}
+
+function leerSesion() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
+}
+
+function limpiarSesion() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+
 export default function Page() {
   // --- Estado de selección ---
   const [paso, setPaso] = useState(1);
@@ -24,19 +38,26 @@ export default function Page() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
 
-  // Cargar empresas al inicio
+  // Recuperar sesión de localStorage al iniciar
   useEffect(() => {
-    setCargandoLista(true);
-    fetch(`${API}/empresas`)
-      .then(r => r.json())
-      .then(data => setEmpresas(Array.isArray(data) ? data : []))
-      .catch(() => setError('No se pudo conectar con el servidor.'))
-      .finally(() => setCargandoLista(false));
+    const sesion = leerSesion();
+    if (sesion?.empleadoId && sesion?.puestoId && sesion?.empresaId) {
+      setEmpresaId(sesion.empresaId);
+      setEmpresaNombre(sesion.empresaNombre);
+      setPuestoId(sesion.puestoId);
+      setPuestoNombre(sesion.puestoNombre);
+      setNombreEmpleado(sesion.nombreEmpleado);
+      setEmpleadoId(sesion.empleadoId);
+      setPaso(4);
+      return; // No cargar empresas si ya hay sesión
+    }
+    // Sin sesión: cargar empresas normalmente
+    cargarEmpresas();
   }, []);
 
   // Cargar puestos al elegir empresa
   useEffect(() => {
-    if (!empresaId) return;
+    if (!empresaId || paso === 4) return;
     setCargandoLista(true);
     setPuestos([]);
     fetch(`${API}/empresas/${empresaId}/puestos`)
@@ -50,6 +71,15 @@ export default function Page() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
+
+  function cargarEmpresas() {
+    setCargandoLista(true);
+    fetch(`${API}/empresas`)
+      .then(r => r.json())
+      .then(data => setEmpresas(Array.isArray(data) ? data : []))
+      .catch(() => setError('No se pudo conectar con el servidor.'))
+      .finally(() => setCargandoLista(false));
+  }
 
   // --- Selección ---
   function elegirEmpresa(id, nombre) {
@@ -73,9 +103,8 @@ export default function Page() {
     setError('');
 
     try {
-      // Generar email único para evitar conflictos
       const emailUnico = `${nombreEmpleado.trim().toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@kore.demo`;
-      
+
       const res = await fetch(`${API}/empleados`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,13 +117,39 @@ export default function Page() {
       });
       const data = await res.json();
       if (!data.id) throw new Error('No se pudo crear el empleado.');
+
       setEmpleadoId(data.id);
+
+      // Guardar sesión en localStorage
+      guardarSesion({
+        empresaId,
+        empresaNombre,
+        puestoId,
+        puestoNombre,
+        nombreEmpleado: nombreEmpleado.trim(),
+        empleadoId: data.id,
+      });
+
       setPaso(4);
     } catch (err) {
       setError('Error al registrar empleado: ' + err.message);
     } finally {
       setCargando(false);
     }
+  }
+
+  function cambiarPuesto() {
+    limpiarSesion();
+    setEmpresaId('');
+    setEmpresaNombre('');
+    setPuestoId('');
+    setPuestoNombre('');
+    setNombreEmpleado('');
+    setEmpleadoId('');
+    setMensajes([]);
+    setError('');
+    setPaso(1);
+    cargarEmpresas();
   }
 
   // --- Chat ---
@@ -301,6 +356,16 @@ export default function Page() {
             padding: '4px 10px', borderRadius: 20,
             letterSpacing: '0.08em'
           }}>KORE OS</div>
+          <button
+            onClick={cambiarPuesto}
+            style={{
+              fontSize: 11, color: '#888', background: 'none',
+              border: '0.5px solid #333', borderRadius: 8,
+              padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            Cambiar puesto
+          </button>
           <a href="/gestion" style={{
             fontSize: 11, color: '#888', textDecoration: 'none',
             border: '0.5px solid #333', borderRadius: 8,
