@@ -46,7 +46,10 @@ export default function Page() {
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
   const bottomRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const sesion = leerSesion();
@@ -77,6 +80,21 @@ export default function Page() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
+
+  // Cerrar menú al hacer click afuera
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuAbierto(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   function cargarEmpresas() {
     setCargandoLista(true);
@@ -121,6 +139,7 @@ export default function Page() {
     limpiarSesion();
     setEmpresaId(''); setEmpresaNombre(''); setPuestoId(''); setPuestoNombre('');
     setNombreEmpleado(''); setEmpleadoId(''); setMensajes([]); setError('');
+    setMenuAbierto(false);
     setPaso(1); cargarEmpresas();
   }
 
@@ -157,7 +176,6 @@ export default function Page() {
         `}</style>
         <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: '0.5px solid #E0E0DA' }}>
 
-          {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '2rem' }}>
             <div style={{ position: 'relative', width: 32, height: 32, flexShrink: 0 }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: 20, height: 20, border: '2px solid #0D0D0D', borderRadius: 3 }} />
@@ -166,7 +184,6 @@ export default function Page() {
             <span style={{ fontSize: 18, fontWeight: 300, letterSpacing: '0.16em', color: '#0D0D0D' }}>KORE</span>
           </div>
 
-          {/* Steps */}
           <div style={{ display: 'flex', gap: 6, marginBottom: '1.5rem' }}>
             {['Empresa', 'Puesto', 'Acceso'].map((label, i) => (
               <div key={i} style={{ flex: 1 }}>
@@ -258,86 +275,93 @@ export default function Page() {
           0%,80%,100% { transform:translateY(0); opacity:0.4; }
           40% { transform:translateY(-5px); opacity:1; }
         }
-        @keyframes girar { to{transform:rotate(360deg)} }
-
-        .kore-header {
-          background: #0D0D0D;
-          color: #F0EDE6;
-          padding: 12px 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-        .kore-header-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-        }
-        .kore-header-info { flex: 1; min-width: 0; }
-        .kore-header-puesto {
-          font-weight: 500;
-          font-size: 15px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .kore-header-sub {
-          font-size: 12px;
-          color: #666;
-          margin-top: 2px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .kore-badge {
-          background: #C8FF57;
-          color: #0D0D0D;
-          font-size: 11px;
-          font-weight: 500;
-          padding: 3px 8px;
-          border-radius: 20px;
-          letter-spacing: 0.08em;
-          flex-shrink: 0;
-          white-space: nowrap;
-        }
-        .kore-header-actions {
-          display: flex;
-          gap: 6px;
-        }
-        .kore-btn-header {
-          font-size: 11px;
-          color: #888;
-          background: none;
-          border: 0.5px solid #333;
-          border-radius: 8px;
-          padding: 5px 10px;
-          cursor: pointer;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-block;
-          flex: 1;
-          text-align: center;
+        @keyframes fadeIn {
+          from { opacity:0; transform:translateY(-6px); }
+          to   { opacity:1; transform:translateY(0); }
         }
       `}</style>
 
-      {/* Header responsive */}
-      <div className="kore-header">
-        <div className="kore-header-top">
-          <div className="kore-header-info">
-            <div className="kore-header-puesto">{puestoNombre}</div>
-            <div className="kore-header-sub">{nombreEmpleado} · {empresaNombre}</div>
+      {/* Header — una sola fila compacta */}
+      <div style={{
+        background: '#0D0D0D', color: '#F0EDE6',
+        padding: '12px 16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, position: 'relative'
+      }}>
+        {/* Info puesto */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {puestoNombre}
           </div>
-          <div className="kore-badge">KORE OS</div>
+          <div style={{ fontSize: 11, color: '#666', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {nombreEmpleado} · {empresaNombre}
+          </div>
         </div>
-        <div className="kore-header-actions">
-          <button onClick={cambiarPuesto} className="kore-btn-header">
-            Cambiar puesto
-          </button>
-          <a href="/gestion" className="kore-btn-header">
-            Panel de gestión →
-          </a>
+
+        {/* Badge + botón menú */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ background: '#C8FF57', color: '#0D0D0D', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20, letterSpacing: '0.08em' }}>
+            KORE OS
+          </div>
+
+          {/* Botón ⋯ */}
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuAbierto(v => !v)}
+              style={{
+                width: 32, height: 32, borderRadius: 8,
+                background: menuAbierto ? '#222' : 'none',
+                border: '0.5px solid #333',
+                color: '#888', cursor: 'pointer',
+                fontSize: 16, lineHeight: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.15s'
+              }}
+            >
+              ···
+            </button>
+
+            {/* Menú desplegable */}
+            {menuAbierto && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                background: '#1A1A1A', border: '0.5px solid #333',
+                borderRadius: 10, padding: '6px',
+                minWidth: 180, zIndex: 100,
+                animation: 'fadeIn 0.15s ease-out',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <button
+                  onClick={cambiarPuesto}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '9px 12px', borderRadius: 7,
+                    background: 'none', border: 'none',
+                    color: '#F0EDE6', fontSize: 13, cursor: 'pointer',
+                    transition: 'background 0.1s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#2A2A2A'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  Cambiar puesto
+                </button>
+                <a
+                  href="/gestion"
+                  onClick={() => setMenuAbierto(false)}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left',
+                    padding: '9px 12px', borderRadius: 7,
+                    color: '#F0EDE6', fontSize: 13, textDecoration: 'none',
+                    transition: 'background 0.1s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#2A2A2A'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  Panel de gestión →
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
