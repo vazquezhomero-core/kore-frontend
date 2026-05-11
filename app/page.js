@@ -29,6 +29,17 @@ function SkeletonLista({ cantidad = 3 }) {
   );
 }
 
+// Tres círculos como ícono de menú
+function IconoMenu() {
+  return (
+    <span style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#C8FF57', display: 'inline-block' }} />
+      ))}
+    </span>
+  );
+}
+
 export default function Page() {
   const [paso, setPaso] = useState(1);
   const [empresas, setEmpresas] = useState([]);
@@ -81,7 +92,6 @@ export default function Page() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
-  // Cerrar menú al hacer click afuera
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -169,7 +179,7 @@ export default function Page() {
   // =============================================
   if (paso < 4) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F0', padding: '1rem' }}>
+      <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F0', padding: '1rem' }}>
         <style>{`
           @keyframes pulso { 0%,100%{opacity:1} 50%{opacity:0.4} }
           @keyframes girar { to{transform:rotate(360deg)} }
@@ -269,7 +279,7 @@ export default function Page() {
   // UI — CHAT
   // =============================================
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#F5F5F0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#F5F5F0' }}>
       <style>{`
         @keyframes bote {
           0%,80%,100% { transform:translateY(0); opacity:0.4; }
@@ -281,14 +291,13 @@ export default function Page() {
         }
       `}</style>
 
-      {/* Header — una sola fila compacta */}
+      {/* Header */}
       <div style={{
         background: '#0D0D0D', color: '#F0EDE6',
         padding: '12px 16px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexShrink: 0, position: 'relative'
       }}>
-        {/* Info puesto */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 500, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {puestoNombre}
@@ -298,48 +307,38 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Badge + botón menú */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{ background: '#C8FF57', color: '#0D0D0D', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20, letterSpacing: '0.08em' }}>
             KORE OS
           </div>
 
-          {/* Botón ⋯ */}
           <div ref={menuRef} style={{ position: 'relative' }}>
             <button
               onClick={() => setMenuAbierto(v => !v)}
               style={{
-                width: 32, height: 32, borderRadius: 8,
+                width: 34, height: 34, borderRadius: 8,
                 background: menuAbierto ? '#222' : 'none',
                 border: '0.5px solid #333',
-                color: '#888', cursor: 'pointer',
-                fontSize: 16, lineHeight: 1,
+                cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s'
               }}
             >
-              ···
+              <IconoMenu />
             </button>
 
-            {/* Menú desplegable */}
             {menuAbierto && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 8px)', right: 0,
                 background: '#1A1A1A', border: '0.5px solid #333',
                 borderRadius: 10, padding: '6px',
-                minWidth: 180, zIndex: 100,
+                minWidth: 190, zIndex: 100,
                 animation: 'fadeIn 0.15s ease-out',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
               }}>
                 <button
                   onClick={cambiarPuesto}
-                  style={{
-                    display: 'block', width: '100%', textAlign: 'left',
-                    padding: '9px 12px', borderRadius: 7,
-                    background: 'none', border: 'none',
-                    color: '#F0EDE6', fontSize: 13, cursor: 'pointer',
-                    transition: 'background 0.1s'
-                  }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 7, background: 'none', border: 'none', color: '#F0EDE6', fontSize: 13, cursor: 'pointer', transition: 'background 0.1s' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2A2A2A'}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}
                 >
@@ -348,12 +347,7 @@ export default function Page() {
                 <a
                   href="/gestion"
                   onClick={() => setMenuAbierto(false)}
-                  style={{
-                    display: 'block', width: '100%', textAlign: 'left',
-                    padding: '9px 12px', borderRadius: 7,
-                    color: '#F0EDE6', fontSize: 13, textDecoration: 'none',
-                    transition: 'background 0.1s'
-                  }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 7, color: '#F0EDE6', fontSize: 13, textDecoration: 'none', transition: 'background 0.1s' }}
                   onMouseEnter={e => e.currentTarget.style.background = '#2A2A2A'}
                   onMouseLeave={e => e.currentTarget.style.background = 'none'}
                 >
