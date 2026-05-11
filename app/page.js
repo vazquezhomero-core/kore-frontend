@@ -2,22 +2,18 @@
 import { useState, useRef, useEffect } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://core-backend-production-9f3f.up.railway.app';
-
 const STORAGE_KEY = 'kore_sesion';
 
 function guardarSesion(datos) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(datos)); } catch {}
 }
-
 function leerSesion() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
 }
-
 function limpiarSesion() {
   try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
-// Skeleton animado
 function SkeletonLista({ cantidad = 3 }) {
   return (
     <>
@@ -94,7 +90,6 @@ export default function Page() {
   function elegirEmpresa(id, nombre) {
     setEmpresaId(id); setEmpresaNombre(nombre); setError(''); setPaso(2);
   }
-
   function elegirPuesto(id, nombre) {
     setPuestoId(id); setPuestoNombre(nombre); setError(''); setPaso(3);
   }
@@ -160,7 +155,6 @@ export default function Page() {
           @keyframes pulso { 0%,100%{opacity:1} 50%{opacity:0.4} }
           @keyframes girar { to{transform:rotate(360deg)} }
         `}</style>
-
         <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: '0.5px solid #E0E0DA' }}>
 
           {/* Logo */}
@@ -188,7 +182,6 @@ export default function Page() {
             </div>
           )}
 
-          {/* Paso 1 */}
           {paso === 1 && (
             <>
               <h2 style={{ fontSize: 17, fontWeight: 500, marginBottom: 4, color: '#0D0D0D' }}>Seleccioná tu empresa</h2>
@@ -203,7 +196,6 @@ export default function Page() {
             </>
           )}
 
-          {/* Paso 2 */}
           {paso === 2 && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -226,7 +218,6 @@ export default function Page() {
             </>
           )}
 
-          {/* Paso 3 */}
           {paso === 3 && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -267,20 +258,86 @@ export default function Page() {
           0%,80%,100% { transform:translateY(0); opacity:0.4; }
           40% { transform:translateY(-5px); opacity:1; }
         }
+        @keyframes girar { to{transform:rotate(360deg)} }
+
+        .kore-header {
+          background: #0D0D0D;
+          color: #F0EDE6;
+          padding: 12px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .kore-header-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .kore-header-info { flex: 1; min-width: 0; }
+        .kore-header-puesto {
+          font-weight: 500;
+          font-size: 15px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .kore-header-sub {
+          font-size: 12px;
+          color: #666;
+          margin-top: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .kore-badge {
+          background: #C8FF57;
+          color: #0D0D0D;
+          font-size: 11px;
+          font-weight: 500;
+          padding: 3px 8px;
+          border-radius: 20px;
+          letter-spacing: 0.08em;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        .kore-header-actions {
+          display: flex;
+          gap: 6px;
+        }
+        .kore-btn-header {
+          font-size: 11px;
+          color: #888;
+          background: none;
+          border: 0.5px solid #333;
+          border-radius: 8px;
+          padding: 5px 10px;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-block;
+          flex: 1;
+          text-align: center;
+        }
       `}</style>
 
-      {/* Header */}
-      <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div>
-          <div style={{ fontWeight: 500, fontSize: 15 }}>{puestoNombre}</div>
-          <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{nombreEmpleado} · {empresaNombre}</div>
+      {/* Header responsive */}
+      <div className="kore-header">
+        <div className="kore-header-top">
+          <div className="kore-header-info">
+            <div className="kore-header-puesto">{puestoNombre}</div>
+            <div className="kore-header-sub">{nombreEmpleado} · {empresaNombre}</div>
+          </div>
+          <div className="kore-badge">KORE OS</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ background: '#C8FF57', color: '#0D0D0D', fontSize: 11, fontWeight: 500, padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em' }}>KORE OS</div>
-          <button onClick={cambiarPuesto} style={{ fontSize: 11, color: '#888', background: 'none', border: '0.5px solid #333', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+        <div className="kore-header-actions">
+          <button onClick={cambiarPuesto} className="kore-btn-header">
             Cambiar puesto
           </button>
-          <a href="/gestion" style={{ fontSize: 11, color: '#888', textDecoration: 'none', border: '0.5px solid #333', borderRadius: 8, padding: '4px 10px', whiteSpace: 'nowrap' }}>Panel de gestión →</a>
+          <a href="/gestion" className="kore-btn-header">
+            Panel de gestión →
+          </a>
         </div>
       </div>
 
@@ -296,13 +353,20 @@ export default function Page() {
 
         {mensajes.map((m, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: m.rol === 'usuario' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-            <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', fontSize: 14, lineHeight: 1.65, background: m.rol === 'usuario' ? '#0D0D0D' : '#fff', color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D', border: m.rol === 'kore' ? '0.5px solid #E0E0DA' : 'none', whiteSpace: 'pre-wrap' }}>
+            <div style={{
+              maxWidth: '78%', padding: '10px 14px',
+              borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
+              fontSize: 14, lineHeight: 1.65,
+              background: m.rol === 'usuario' ? '#0D0D0D' : '#fff',
+              color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D',
+              border: m.rol === 'kore' ? '0.5px solid #E0E0DA' : 'none',
+              whiteSpace: 'pre-wrap'
+            }}>
               {m.texto}
             </div>
           </div>
         ))}
 
-        {/* Typing indicator — tres puntos que rebotan */}
         {cargando && (
           <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
             <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#fff', border: '0.5px solid #E0E0DA', display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -319,7 +383,8 @@ export default function Page() {
 
       {/* Input */}
       <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
-        <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribí tu mensaje..." disabled={cargando}
+        <input value={input} onChange={e => setInput(e.target.value)}
+          placeholder="Escribí tu mensaje..." disabled={cargando}
           style={{ flex: 1, padding: '10px 14px', border: '0.5px solid #E0E0DA', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#fff' }}
         />
         <button type="submit" disabled={cargando || !input.trim()}
