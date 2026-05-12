@@ -239,8 +239,7 @@ export default function Page() {
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
                 >
                   <div style={{ fontSize: 14, fontWeight: 500, color: '#0D0D0D' }}>{p.nombre}</div>
-                  {p.descripcion_rol && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{p.descripcion_rol}</div>}
-                </button>
+                                  </button>
               ))}
             </>
           )}
