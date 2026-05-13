@@ -58,6 +58,8 @@ export default function Page() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [tareasPendientes, setTareasPendientes] = useState(null);
+  const [aprobando, setAprobando] = useState(false);
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -167,6 +169,9 @@ export default function Page() {
       });
       const data = await res.json();
       setMensajes(prev => [...prev, { rol: 'kore', texto: data.respuesta || data.error || 'Sin respuesta.' }]);
+      if (data.tareas_sugeridas && data.tareas_sugeridas.length > 0) {
+        setTareasPendientes({ tareas: data.tareas_sugeridas, puesto_origen_id: puestoId });
+      }
     } catch {
       setError('Error de conexión.');
     } finally {
@@ -273,7 +278,29 @@ export default function Page() {
       </div>
     );
   }
-
+async function aprobarAsignaciones() {
+    if (!tareasPendientes) return;
+    setAprobando(true);
+    try {
+      const res = await fetch(`${API}/asignar-tareas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa_id: empresaId,
+          puesto_origen_id: tareasPendientes.puesto_origen_id,
+          tareas: tareasPendientes.tareas
+        }),
+      });
+      const data = await res.json();
+      const ok = data.resultados?.filter(r => r.ok).length || 0;
+      setMensajes(prev => [...prev, { rol: 'kore', texto: `✓ ${ok} tarea${ok !== 1 ? 's' : ''} asignada${ok !== 1 ? 's' : ''} correctamente.` }]);
+      setTareasPendientes(null);
+    } catch {
+      setError('Error al asignar tareas.');
+    } finally {
+      setAprobando(false);
+    }
+  }
   // =============================================
   // UI — CHAT
   // =============================================
@@ -384,6 +411,33 @@ export default function Page() {
           </div>
         ))}
 
+        {tareasPendientes && (
+          <div style={{ display: 'flex', gap: 8, padding: '8px 0', justifyContent: 'flex-start' }}>
+            <button
+              onClick={aprobarAsignaciones}
+              disabled={aprobando}
+              style={{
+                padding: '9px 18px', borderRadius: 10, border: 'none',
+                background: aprobando ? '#E0E0DA' : '#0D0D0D',
+                color: aprobando ? '#999' : '#C8FF57',
+                fontSize: 13, fontWeight: 500, cursor: aprobando ? 'default' : 'pointer'
+              }}
+            >
+              {aprobando ? 'Asignando...' : `Aprobar ${tareasPendientes.tareas.length} tarea${tareasPendientes.tareas.length !== 1 ? 's' : ''}`}
+            </button>
+            <button
+              onClick={() => setTareasPendientes(null)}
+              disabled={aprobando}
+              style={{
+                padding: '9px 18px', borderRadius: 10,
+                border: '0.5px solid #E0E0DA', background: '#fff',
+                color: '#666', fontSize: 13, cursor: 'pointer'
+              }}
+            >
+              Modificar
+            </button>
+          </div>
+        )}
         {cargando && (
           <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
             <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#fff', border: '0.5px solid #E0E0DA', display: 'flex', gap: 5, alignItems: 'center' }}>
