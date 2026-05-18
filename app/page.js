@@ -281,14 +281,31 @@ export default function Page() {
 async function aprobarAsignaciones() {
     if (!tareasPendientes) return;
     setAprobando(true);
-    try {
+   try {
+      const tareasResueltas = [...tareasPendientes.tareas];
+      const hayNulos = tareasResueltas.some(t => !t.puesto_destino_id);
+      
+      if (hayNulos) {
+        const resPuestos = await fetch(`${API}/empresas/${empresaId}/puestos`);
+        const puestos = await resPuestos.json();
+        for (const tarea of tareasResueltas) {
+          if (!tarea.puesto_destino_id && tarea.puesto_destino_nombre) {
+            const match = puestos.find(p => 
+              p.nombre.toLowerCase().includes(tarea.puesto_destino_nombre.toLowerCase()) ||
+              tarea.puesto_destino_nombre.toLowerCase().includes(p.nombre.toLowerCase())
+            );
+            if (match) tarea.puesto_destino_id = match.id;
+          }
+        }
+      }
+
       const res = await fetch(`${API}/asignar-tareas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           empresa_id: empresaId,
           puesto_origen_id: tareasPendientes.puesto_origen_id,
-          tareas: tareasPendientes.tareas
+          tareas: tareasResueltas
         }),
       });
       const data = await res.json();
