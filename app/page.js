@@ -60,6 +60,8 @@ export default function Page() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [tareasPendientes, setTareasPendientes] = useState(null);
   const [aprobando, setAprobando] = useState(false);
+  const [tareasPuesto, setTareasPuesto] = useState([]);
+  const [panelTareasAbierto, setPanelTareasAbierto] = useState(false);
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -74,6 +76,7 @@ export default function Page() {
       setNombreEmpleado(sesion.nombreEmpleado);
       setEmpleadoId(sesion.empleadoId);
       setPaso(4);
+      cargarTareasPuesto(sesion.puestoId);
       return;
     }
     cargarEmpresas();
@@ -140,6 +143,7 @@ export default function Page() {
       setEmpleadoId(data.id);
       guardarSesion({ empresaId, empresaNombre, puestoId, puestoNombre, nombreEmpleado: nombreEmpleado.trim(), empleadoId: data.id });
       setPaso(4);
+      cargarTareasPuesto(puestoId);
     } catch (err) {
       setError('Error al registrar empleado: ' + err.message);
     } finally {
@@ -147,7 +151,15 @@ export default function Page() {
     }
   }
 
-  function cambiarPuesto() {
+  async function cargarTareasPuesto(id) {
+    try {
+      const res = await fetch(`${API}/puestos/${id}/tareas`);
+      const data = await res.json();
+      setTareasPuesto(Array.isArray(data) ? data.filter(t => t.estado === 'pendiente') : []);
+    } catch {
+      setTareasPuesto([]);
+    }
+  }function cambiarPuesto() {
     limpiarSesion();
     setEmpresaId(''); setEmpresaNombre(''); setPuestoId(''); setPuestoNombre('');
     setNombreEmpleado(''); setEmpleadoId(''); setMensajes([]); setError('');
@@ -352,8 +364,24 @@ async function aprobarAsignaciones() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{ background: '#C8FF57', color: '#0D0D0D', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20, letterSpacing: '0.08em' }}>
-            KORE OS
-          </div>
+            KORE OS</div>
+            <button
+            onClick={() => setPanelTareasAbierto(true)}
+            style={{
+              background: tareasPuesto.length > 0 ? '#C8FF57' : 'transparent',
+              border: tareasPuesto.length > 0 ? 'none' : '0.5px solid #444',
+              borderRadius: 20,
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: tareasPuesto.length > 0 ? '#0D0D0D' : '#666',
+              cursor: 'pointer',
+              letterSpacing: '0.05em'
+            }}
+          >
+            {tareasPuesto.length > 0 ? `${tareasPuesto.length} TAREA${tareasPuesto.length !== 1 ? 'S' : ''}` : 'SIN TAREAS'}
+          </button>
+         
 
           <div ref={menuRef} style={{ position: 'relative' }}>
             <button
@@ -468,6 +496,34 @@ async function aprobarAsignaciones() {
         {error && <p style={{ color: '#C00', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>{error}</p>}
         <div ref={bottomRef} />
       </div>
+
+      {/* Panel lateral de tareas */}
+        {panelTareasAbierto && (
+          <div style={{
+            position: 'fixed', top: 0, right: 0, width: 300, height: '100dvh',
+            background: '#fff', borderLeft: '0.5px solid #E0E0DA',
+            zIndex: 200, display: 'flex', flexDirection: 'column',
+            boxShadow: '-8px 0 24px rgba(0,0,0,0.08)'
+          }}>
+            <div style={{ padding: '16px', borderBottom: '0.5px solid #E0E0DA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D' }}>
+                Tareas pendientes {tareasPuesto.length > 0 && <span style={{ background: '#C8FF57', color: '#0D0D0D', borderRadius: 20, padding: '1px 7px', fontSize: 11, marginLeft: 6 }}>{tareasPuesto.length}</span>}
+              </div>
+              <button onClick={() => setPanelTareasAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#888' }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+              {tareasPuesto.length === 0 ? (
+                <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>Sin tareas pendientes</p>
+              ) : tareasPuesto.map(t => (
+                <div key={t.id} style={{ padding: '12px', borderRadius: 10, border: '0.5px solid #E0E0DA', marginBottom: 8, background: '#F5F5F0' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D', marginBottom: 4 }}>{t.titulo}</div>
+                  {t.descripcion && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>{t.descripcion}</div>}
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 6 }}>Prioridad: {t.prioridad}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* Input */}
       <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
