@@ -166,12 +166,9 @@ export default function PanelGestion() {
                         }}>BLOQUEO</div>
                       )}
 
-                      <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', marginBottom: 4, paddingRight: hayBloqueo ? 70 : 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', marginBottom: 14, paddingRight: hayBloqueo ? 70 : 0 }}>
                         {p.nombre}
                       </div>
-                      {p.descripcion_rol && (
-                        <div style={{ fontSize: 12, color: '#888', marginBottom: 14, lineHeight: 1.5 }}>{p.descripcion_rol}</div>
-                      )}
 
                       {/* Tareas */}
                       <div style={{ marginBottom: 12 }}>
