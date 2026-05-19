@@ -86,6 +86,13 @@ function formatFecha(iso) {
 
 const ORDEN_ESTADOS = ['bloqueada', 'pendiente', 'en progreso', 'completada'];
 
+const TRANSICIONES = {
+  pendiente:     [{ accion: 'Iniciar', estado: 'en progreso' }, { accion: 'Bloquear', estado: 'bloqueada' }],
+  'en progreso': [{ accion: 'Completar', estado: 'completada' }, { accion: 'Bloquear', estado: 'bloqueada' }],
+  bloqueada:     [{ accion: 'Retomar', estado: 'pendiente' }],
+  completada:    [],
+};
+
 function ordenarTareas(tareas) {
   return [...tareas].sort((a, b) => {
     const ia = ORDEN_ESTADOS.indexOf(a.estado);
@@ -120,6 +127,7 @@ export default function Page() {
   const [tareasPuesto, setTareasPuesto] = useState([]);
   const [panelTareasAbierto, setPanelTareasAbierto] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todas');
+  const [actualizandoTarea, setActualizandoTarea] = useState(null); // id de tarea en proceso
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -217,6 +225,23 @@ export default function Page() {
       setTareasPuesto(Array.isArray(data) ? data : []);
     } catch {
       setTareasPuesto([]);
+    }
+  }
+
+  async function cambiarEstadoTarea(tareaId, nuevoEstado) {
+    setActualizandoTarea(tareaId);
+    try {
+      const res = await fetch(`${API}/tareas/${tareaId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar');
+      await cargarTareasPuesto(puestoId);
+    } catch {
+      setError('Error al cambiar estado de la tarea.');
+    } finally {
+      setActualizandoTarea(null);
     }
   }
 
@@ -673,6 +698,38 @@ export default function Page() {
                         </span>
                       )}
                     </div>
+
+                    {/* Botones de transicion */}
+                    {TRANSICIONES[t.estado]?.length > 0 && (
+                      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                        {TRANSICIONES[t.estado].map(({ accion, estado: nuevoEstado }) => {
+                          const esPrimario = accion !== 'Bloquear';
+                          const cargando = actualizandoTarea === t.id;
+                          return (
+                            <button
+                              key={accion}
+                              onClick={() => cambiarEstadoTarea(t.id, nuevoEstado)}
+                              disabled={cargando}
+                              style={{
+                                flex: esPrimario ? 1 : 0,
+                                padding: '6px 12px',
+                                borderRadius: 8,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                cursor: cargando ? 'default' : 'pointer',
+                                border: esPrimario ? 'none' : '0.5px solid #E0E0DA',
+                                background: cargando ? '#E0E0DA' : esPrimario ? '#0D0D0D' : '#fff',
+                                color: cargando ? '#999' : esPrimario ? '#C8FF57' : '#888',
+                                transition: 'all 0.1s',
+                                letterSpacing: '0.03em'
+                              }}
+                            >
+                              {cargando ? '...' : accion}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
