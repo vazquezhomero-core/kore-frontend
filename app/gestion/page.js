@@ -27,6 +27,7 @@ export default function PanelGestion() {
   const [detalle, setDetalle] = useState({});
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
+  const [tareasDashboard, setTareasDashboard] = useState([]);
 
   useEffect(() => {
     fetch(`${API}/empresas`)
@@ -40,6 +41,13 @@ export default function PanelGestion() {
     setCargando(true);
     setPuestos([]);
     setDetalle({});
+    setTareasDashboard([]);
+
+    fetch(`${API}/empresas/${empresaId}/tareas`)
+      .then(r => r.json())
+      .then(data => setTareasDashboard(Array.isArray(data) ? data : []))
+      .catch(() => {});
+
     fetch(`${API}/empresas/${empresaId}/puestos`)
       .then(r => r.json())
       .then(async (data) => {
@@ -68,6 +76,32 @@ export default function PanelGestion() {
     setError('');
   }
 
+  // Calculos dashboard
+  const totalPendiente  = tareasDashboard.filter(t => t.estado === 'pendiente').length;
+  const totalEnProgreso = tareasDashboard.filter(t => t.estado === 'en progreso').length;
+  const totalBloqueada  = tareasDashboard.filter(t => t.estado === 'bloqueada').length;
+  const totalCompletada = tareasDashboard.filter(t => t.estado === 'completada').length;
+
+  const hoy = new Date();
+  const totalVencidas = tareasDashboard.filter(t =>
+    t.fecha_vencimiento &&
+    new Date(t.fecha_vencimiento) < hoy &&
+    t.estado !== 'completada'
+  ).length;
+
+  // Tareas por puesto
+  const tareasPorPuesto = puestos.map(p => {
+    const tp = tareasDashboard.filter(t => t.puesto_destino_id === p.id);
+    return {
+      nombre: p.nombre,
+      pendiente:    tp.filter(t => t.estado === 'pendiente').length,
+      enProgreso:   tp.filter(t => t.estado === 'en progreso').length,
+      bloqueada:    tp.filter(t => t.estado === 'bloqueada').length,
+      completada:   tp.filter(t => t.estado === 'completada').length,
+      total:        tp.length,
+    };
+  }).filter(p => p.total > 0);
+
   return (
     <div style={{ minHeight: '100vh', background: '#F5F5F0' }}>
 
@@ -88,7 +122,7 @@ export default function PanelGestion() {
         <Link href="/" style={{
           fontSize: 12, color: '#888', textDecoration: 'none',
           border: '0.5px solid #333', borderRadius: 8,
-          padding: '5px 12px', transition: 'color 0.15s'
+          padding: '5px 12px',
         }}>
           Vista empleado
         </Link>
@@ -114,7 +148,7 @@ export default function PanelGestion() {
                     textAlign: 'left', padding: '12px 16px',
                     border: '0.5px solid #E0E0DA', borderRadius: 10,
                     background: '#fff', cursor: 'pointer', fontSize: 14,
-                    color: '#0D0D0D', transition: 'border-color 0.15s'
+                    color: '#0D0D0D',
                   }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
@@ -126,6 +160,7 @@ export default function PanelGestion() {
           </div>
         ) : (
           <>
+            {/* Header empresa */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 500, color: '#0D0D0D', marginBottom: 2 }}>{empresaNombre}</h2>
@@ -137,101 +172,40 @@ export default function PanelGestion() {
               </button>
             </div>
 
-            {cargando ? (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>Cargando puestos...</div>
-            ) : puestos.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>No hay puestos cargados para esta empresa.</div>
-            ) : (
-              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-                {puestos.map(p => {
-                  const d = detalle[p.id] || { tareas: [], conversaciones: [] };
-                  const tareasActivas = d.tareas.filter(t => t.estado === 'pendiente' || t.estado === 'en progreso').length;
-                  const tareasTotal = d.tareas.length;
-                  const ultimaConv = d.conversaciones[0];
-                  const hayBloqueo = d.tareas.some(t => t.estado === 'bloqueada');
+            {/* Dashboard */}
+            {tareasDashboard.length > 0 && (
+              <div style={{ marginBottom: '2rem' }}>
+                <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#aaa', marginBottom: 12 }}>
+                  Dashboard de tareas
+                </div>
 
-                  return (
-                    <div key={p.id} style={{
-                      background: '#fff',
-                      border: `0.5px solid ${hayBloqueo ? '#FF9057' : '#E0E0DA'}`,
-                      borderRadius: 12, padding: '1.25rem',
-                      position: 'relative'
+                {/* Tarjetas de estado */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
+                  {[
+                    { label: 'Pendientes',   value: totalPendiente,  color: '#B8860B', bg: '#FFFBEA' },
+                    { label: 'En progreso',  value: totalEnProgreso, color: '#1565C0', bg: '#EBF3FF' },
+                    { label: 'Bloqueadas',   value: totalBloqueada,  color: '#C62828', bg: '#FFF0F0' },
+                    { label: 'Completadas',  value: totalCompletada, color: '#2E7D32', bg: '#F0FFF4' },
+                    { label: 'Vencidas',     value: totalVencidas,   color: '#FF6B00', bg: '#FFF5EE' },
+                  ].map(card => (
+                    <div key={card.label} style={{
+                      background: card.bg,
+                      border: `0.5px solid ${card.color}33`,
+                      borderRadius: 10, padding: '14px 16px',
                     }}>
-                      {hayBloqueo && (
-                        <div style={{
-                          position: 'absolute', top: 12, right: 12,
-                          background: '#FF9057', color: '#fff',
-                          fontSize: 10, fontWeight: 600, padding: '2px 8px',
-                          borderRadius: 20, letterSpacing: '0.05em'
-                        }}>BLOQUEO</div>
-                      )}
-
-                      <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', marginBottom: 14, paddingRight: hayBloqueo ? 70 : 0 }}>
-                        {p.nombre}
-                      </div>
-
-                      {/* Tareas */}
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>
-                          Tareas
-                        </div>
-                        {tareasTotal === 0 ? (
-                          <div style={{ fontSize: 12, color: '#ccc' }}>Sin tareas asignadas</div>
-                        ) : (
-                          <>
-                            {d.tareas.slice(0, 3).map(t => (
-                              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                <div style={{
-                                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                                  background: estadoColor(t.estado)
-                                }} />
-                                <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, lineHeight: 1.4 }}>{t.titulo || t.descripcion}</div>
-                                <div style={{ fontSize: 10, color: '#aaa', flexShrink: 0 }}>{estadoTexto(t.estado)}</div>
-                              </div>
-                            ))}
-                            {tareasTotal > 3 && (
-                              <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>+{tareasTotal - 3} mas</div>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      {/* Ultima actividad */}
-                      <div style={{ borderTop: '0.5px solid #F0F0EA', paddingTop: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>
-                          Ultima actividad
-                        </div>
-                        {ultimaConv ? (
-                          <div style={{ fontSize: 12, color: '#888' }}>
-                            {new Date(ultimaConv.updated_at || ultimaConv.created_at).toLocaleDateString('es-AR', {
-                              day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
-                            })}
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 12, color: '#ccc' }}>Sin conversaciones</div>
-                        )}
-                      </div>
-
-                      {/* Resumen */}
-                      <div style={{
-                        marginTop: 12, background: '#F5F5F0',
-                        borderRadius: 8, padding: '8px 10px',
-                        fontSize: 12, color: '#555'
-                      }}>
-                        {tareasActivas > 0
-                          ? `${tareasActivas} tarea${tareasActivas !== 1 ? 's' : ''} activa${tareasActivas !== 1 ? 's' : ''}`
-                          : 'Sin tareas activas'}
-                        {' · '}
-                        {d.conversaciones.length} conversacion{d.conversaciones.length !== 1 ? 'es' : ''}
-                      </div>
+                      <div style={{ fontSize: 24, fontWeight: 300, color: card.color, lineHeight: 1 }}>{card.value}</div>
+                      <div style={{ fontSize: 11, color: card.color, marginTop: 4, letterSpacing: '0.04em' }}>{card.label}</div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+                  ))}
+                </div>
+
+                {/* Tareas por puesto */}
+                {tareasPorPuesto.length > 0 && (
+                  <div style={{ background: '#fff', border: '0.5px solid #E0E0DA', borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0EA', fontSize: 12, fontWeight: 500, color: '#555' }}>
+                      Tareas por puesto
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr style={{ background: '#F9F9F7' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 16px', color: '#aaa', fontWeight: 500 }}></th>
