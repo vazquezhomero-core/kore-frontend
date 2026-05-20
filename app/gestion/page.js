@@ -173,7 +173,7 @@ export default function PanelGestion() {
             </div>
 
             {/* Dashboard */}
-            {tareasDashboard.length > 0 && (
+            {empresaId && (
               <div style={{ marginBottom: '2rem' }}>
                 <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#aaa', marginBottom: 12 }}>
                   Dashboard de tareas
