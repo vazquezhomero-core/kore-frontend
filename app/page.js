@@ -127,7 +127,12 @@ export default function Page() {
   const [tareasPuesto, setTareasPuesto] = useState([]);
   const [panelTareasAbierto, setPanelTareasAbierto] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todas');
-  const [actualizandoTarea, setActualizandoTarea] = useState(null); // id de tarea en proceso
+  const [actualizandoTarea, setActualizandoTarea] = useState(null);
+  const [panelMensajesAbierto, setPanelMensajesAbierto] = useState(false);
+  const [mensajesPuesto, setMensajesPuesto] = useState([]);
+  const [puestoDestino, setPuestoDestino] = useState('');
+  const [textoMensaje, setTextoMensaje] = useState('');
+  const [enviandoMensaje, setEnviandoMensaje] = useState(false);
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -214,6 +219,16 @@ export default function Page() {
       setError('Error al registrar empleado: ' + err.message);
     } finally {
       setCargando(false);
+    }
+  }
+
+  async function cargarMensajesPuesto(id) {
+    try {
+      const res = await fetch(`${API}/mensajes/${id}`);
+      const data = await res.json();
+      setMensajesPuesto(Array.isArray(data) ? data : []);
+    } catch {
+      setMensajesPuesto([]);
     }
   }
 
@@ -468,6 +483,23 @@ export default function Page() {
           <div style={{ background: '#C8FF57', color: '#0D0D0D', fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 20, letterSpacing: '0.08em' }}>
             KORE OS
           </div>
+
+          <button
+            onClick={() => { setPanelMensajesAbierto(true); cargarMensajesPuesto(puestoId); }}
+            style={{
+              background: 'transparent',
+              border: '0.5px solid #444',
+              borderRadius: 20,
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#666',
+              cursor: 'pointer',
+              letterSpacing: '0.05em'
+            }}
+          >
+            MENSAJES
+          </button>
 
           <button
             onClick={() => { setPanelTareasAbierto(true); setFiltroEstado('todas'); }}
@@ -747,6 +779,69 @@ export default function Page() {
               >
                 Actualizar
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Panel lateral de mensajes */}
+      {panelMensajesAbierto && (
+        <>
+          <div onClick={() => setPanelMensajesAbierto(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
+          <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#fff', borderLeft: '0.5px solid #E0E0DA', zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.1)', animation: 'slideIn 0.2s ease-out' }}>
+            <div style={{ padding: '16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>Mensajes</div>
+              <button onClick={() => setPanelMensajesAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
+            </div>
+            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0 }}>
+              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Enviar a</div>
+              <select value={puestoDestino} onChange={e => setPuestoDestino(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', marginBottom: 10 }}>
+                <option value="">Seleccionar puesto...</option>
+                {puestos.filter(p => p.id !== puestoId).map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+              <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Escribi tu mensaje..." rows={3} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              <button
+                disabled={!puestoDestino || !textoMensaje.trim() || enviandoMensaje}
+                onClick={async () => {
+                  if (!puestoDestino || !textoMensaje.trim()) return;
+                  setEnviandoMensaje(true);
+                  try {
+                    await fetch(`${API}/mensajes`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() })
+                    });
+                    setTextoMensaje('');
+                    setPuestoDestino('');
+                    cargarMensajesPuesto(puestoId);
+                  } catch { } finally { setEnviandoMensaje(false); }
+                }}
+                style={{ width: '100%', marginTop: 8, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+              >
+                {enviandoMensaje ? 'Enviando...' : 'Enviar mensaje'}
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+              {mensajesPuesto.length === 0 ? (
+                <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>Sin mensajes todavia</p>
+              ) : [...mensajesPuesto].reverse().map(m => {
+                const esMio = m.puesto_origen_id === puestoId;
+                return (
+                  <div key={m.id} style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', alignItems: esMio ? 'flex-end' : 'flex-start' }}>
+                    <div style={{ fontSize: 10, color: '#aaa', marginBottom: 3 }}>
+                      {esMio ? 'Vos' : puestos.find(p => p.id === m.puesto_origen_id)?.nombre || 'Otro puesto'}
+                    </div>
+                    <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: esMio ? '10px 10px 2px 10px' : '10px 10px 10px 2px', fontSize: 13, lineHeight: 1.5, background: esMio ? '#0D0D0D' : '#F5F5F0', color: esMio ? '#F0EDE6' : '#0D0D0D', border: esMio ? 'none' : '0.5px solid #E0E0DA' }}>
+                      {m.contenido}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#ccc', marginTop: 3 }}>
+                      {new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </>
