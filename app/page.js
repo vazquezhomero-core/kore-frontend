@@ -133,6 +133,7 @@ export default function Page() {
   const [puestoDestino, setPuestoDestino] = useState('');
   const [textoMensaje, setTextoMensaje] = useState('');
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
+  const [hiloAbierto, setHiloAbierto] = useState(null);
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -485,20 +486,24 @@ export default function Page() {
           </div>
 
           <button
-            onClick={() => { setPanelMensajesAbierto(true); cargarMensajesPuesto(puestoId); }}
-            style={{
-              background: 'transparent',
-              border: '0.5px solid #444',
-              borderRadius: 20,
-              padding: '4px 10px',
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#666',
-              cursor: 'pointer',
-              letterSpacing: '0.05em'
+            onClick={async () => {
+              setPanelMensajesAbierto(true);
+              setHiloAbierto(null);
+              cargarMensajesPuesto(puestoId);
+              if (puestos.length === 0) {
+                const res = await fetch(`${API}/empresas/${empresaId}/puestos`);
+                const data = await res.json();
+                setPuestos(Array.isArray(data) ? data : []);
+              }
             }}
+            style={{ position: 'relative', background: 'transparent', border: '0.5px solid #444', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#666', cursor: 'pointer', letterSpacing: '0.05em' }}
           >
             MENSAJES
+            {mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length > 0 && (
+              <span style={{ position: 'absolute', top: -4, right: -4, background: '#E53935', color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 20, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>
+                {mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length}
+              </span>
+            )}
           </button>
 
           <button
@@ -785,67 +790,131 @@ export default function Page() {
       )}
 
       {/* Panel lateral de mensajes */}
-      {panelMensajesAbierto && (
+      {panelMensajesAbierto && (() => {
+        const conversaciones = puestos
+          .filter(p => p.id !== puestoId)
+          .map(p => {
+            const msgs = mensajesPuesto.filter(m => m.puesto_origen_id === p.id || m.puesto_destino_id === p.id);
+            const noLeidos = msgs.filter(m => m.puesto_origen_id === p.id && !m.leido).length;
+            const ultimo = msgs[msgs.length - 1];
+            return { puesto: p, msgs, noLeidos, ultimo };
+          })
+          .filter(c => c.msgs.length > 0)
+          .sort((a, b) => new Date(b.ultimo?.created_at) - new Date(a.ultimo?.created_at));
+
+        const hiloActual = hiloAbierto ? conversaciones.find(c => c.puesto.id === hiloAbierto) : null;
+
+        return (
         <>
-          <div onClick={() => setPanelMensajesAbierto(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
+          <div onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
           <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#fff', borderLeft: '0.5px solid #E0E0DA', zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.1)', animation: 'slideIn 0.2s ease-out' }}>
-            <div style={{ padding: '16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>Mensajes</div>
-              <button onClick={() => setPanelMensajesAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
+            <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hiloAbierto && (
+                <button onClick={() => setHiloAbierto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#888', padding: 0, lineHeight: 1 }}>←</button>
+              )}
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D', flex: 1 }}>
+                {hiloAbierto ? (puestos.find(p => p.id === hiloAbierto)?.nombre || 'Mensajes') : 'Mensajes'}
+              </div>
+              {!hiloAbierto && (
+                <button onClick={() => { setHiloAbierto('nuevo'); setPuestoDestino(''); setTextoMensaje(''); }} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: '0.5px solid #E0E0DA', background: '#F5F5F0', color: '#555', cursor: 'pointer' }}>+ Nuevo</button>
+              )}
+              <button onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
             </div>
-            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0 }}>
-              <div style={{ fontSize: 11, color: '#aaa', marginBottom: 6, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Enviar a</div>
-              <select value={puestoDestino} onChange={e => setPuestoDestino(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', marginBottom: 10 }}>
-                <option value="">Seleccionar puesto...</option>
-                {puestos.filter(p => p.id !== puestoId).map(p => (
-                  <option key={p.id} value={p.id}>{p.nombre}</option>
+
+            {/* Vista: lista de conversaciones */}
+            {!hiloAbierto && (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {conversaciones.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>Sin conversaciones todavia</p>
+                ) : conversaciones.map(c => (
+                  <div key={c.puesto.id} onClick={async () => {
+                    setHiloAbierto(c.puesto.id);
+                    if (c.noLeidos > 0) {
+                      const noLeidos = c.msgs.filter(m => m.puesto_origen_id === c.puesto.id && !m.leido);
+                      await Promise.all(noLeidos.map(m => fetch(`${API}/mensajes/${m.id}/leido`, { method: 'PUT' })));
+                      cargarMensajesPuesto(puestoId);
+                    }
+                  }} style={{ padding: '14px 16px', borderBottom: '0.5px solid #F0F0EA', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: '#fff' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F9F9F7'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>{c.puesto.nombre}</div>
+                        {c.noLeidos > 0 && <div style={{ background: '#E53935', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '1px 6px', minWidth: 16, textAlign: 'center' }}>{c.noLeidos}</div>}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.ultimo?.contenido || ''}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 10, color: '#ccc', flexShrink: 0 }}>
+                      {c.ultimo ? new Date(c.ultimo.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : ''}
+                    </div>
+                  </div>
                 ))}
-              </select>
-              <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Escribi tu mensaje..." rows={3} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-              <button
-                disabled={!puestoDestino || !textoMensaje.trim() || enviandoMensaje}
-                onClick={async () => {
+              </div>
+            )}
+
+            {/* Vista: nuevo mensaje */}
+            {hiloAbierto === 'nuevo' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px' }}>
+                <select value={puestoDestino} onChange={e => setPuestoDestino(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', marginBottom: 10 }}>
+                  <option value="">Seleccionar puesto...</option>
+                  {puestos.filter(p => p.id !== puestoId).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                </select>
+                <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Escribi tu mensaje..." rows={4} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                <button disabled={!puestoDestino || !textoMensaje.trim() || enviandoMensaje} onClick={async () => {
                   if (!puestoDestino || !textoMensaje.trim()) return;
                   setEnviandoMensaje(true);
                   try {
-                    await fetch(`${API}/mensajes`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() })
-                    });
-                    setTextoMensaje('');
-                    setPuestoDestino('');
-                    cargarMensajesPuesto(puestoId);
+                    await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() }) });
+                    const destId = puestoDestino;
+                    setTextoMensaje(''); setPuestoDestino('');
+                    await cargarMensajesPuesto(puestoId);
+                    setHiloAbierto(destId);
                   } catch { } finally { setEnviandoMensaje(false); }
-                }}
-                style={{ width: '100%', marginTop: 8, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-              >
-                {enviandoMensaje ? 'Enviando...' : 'Enviar mensaje'}
-              </button>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-              {mensajesPuesto.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>Sin mensajes todavia</p>
-              ) : [...mensajesPuesto].reverse().map(m => {
-                const esMio = m.puesto_origen_id === puestoId;
-                return (
-                  <div key={m.id} style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', alignItems: esMio ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ fontSize: 10, color: '#aaa', marginBottom: 3 }}>
-                      {esMio ? 'Vos' : puestos.find(p => p.id === m.puesto_origen_id)?.nombre || 'Otro puesto'}
-                    </div>
-                    <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: esMio ? '10px 10px 2px 10px' : '10px 10px 10px 2px', fontSize: 13, lineHeight: 1.5, background: esMio ? '#0D0D0D' : '#F5F5F0', color: esMio ? '#F0EDE6' : '#0D0D0D', border: esMio ? 'none' : '0.5px solid #E0E0DA' }}>
-                      {m.contenido}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#ccc', marginTop: 3 }}>
-                      {new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                }} style={{ marginTop: 10, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  {enviandoMensaje ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            )}
+
+            {/* Vista: hilo de conversacion */}
+            {hiloAbierto && hiloAbierto !== 'nuevo' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+                  {(hiloActual?.msgs || []).map(m => {
+                    const esMio = m.puesto_origen_id === puestoId;
+                    return (
+                      <div key={m.id} style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', alignItems: esMio ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: esMio ? '10px 10px 2px 10px' : '10px 10px 10px 2px', fontSize: 13, lineHeight: 1.5, background: esMio ? '#0D0D0D' : '#F5F5F0', color: esMio ? '#F0EDE6' : '#0D0D0D', border: esMio ? 'none' : '0.5px solid #E0E0DA' }}>
+                          {m.contenido}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#ccc', marginTop: 2 }}>
+                          {new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ padding: '12px', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8 }}>
+                  <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Responder..." rows={2} style={{ flex: 1, padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', fontFamily: 'inherit' }} />
+                  <button disabled={!textoMensaje.trim() || enviandoMensaje} onClick={async () => {
+                    if (!textoMensaje.trim()) return;
+                    setEnviandoMensaje(true);
+                    try {
+                      await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: hiloAbierto, empleado_id: empleadoId, contenido: textoMensaje.trim() }) });
+                      setTextoMensaje('');
+                      await cargarMensajesPuesto(puestoId);
+                    } catch { } finally { setEnviandoMensaje(false); }
+                  }} style={{ padding: '0 14px', borderRadius: 8, border: 'none', background: !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 16, cursor: 'pointer' }}>→</button>
+                </div>
+              </div>
+            )}
           </div>
         </>
-      )}
+        );
+      })()}
 
       {/* Input */}
       <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
