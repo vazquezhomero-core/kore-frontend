@@ -19,18 +19,6 @@ function estadoTexto(estado) {
   return ESTADO_CONFIG[estado]?.label || estado;
 }
 
-function KoreLogo() {
-  return (
-    <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-      <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, width: 17, height: 17, border: '1.5px solid #F0EDE6', borderRadius: 2 }} />
-        <div style={{ position: 'absolute', bottom: 0, right: 0, width: 17, height: 17, background: '#C8FF57', borderRadius: 2 }} />
-      </div>
-      <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '0.16em', color: '#F0EDE6' }}>KORE</span>
-    </Link>
-  );
-}
-
 export default function PanelGestion() {
   const [empresas, setEmpresas] = useState([]);
   const [empresaId, setEmpresaId] = useState('');
@@ -111,20 +99,21 @@ export default function PanelGestion() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#F5F5F0' }}>
-
-      {/* Header — solo logo KORE */}
-      <div style={{
-        background: '#0D0D0D',
-        color: '#F0EDE6',
-        padding: '14px 24px',
-        display: 'flex',
-        alignItems: 'center',
-      }}>
-        <KoreLogo />
+      <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: 17, height: 17, border: '1.5px solid #F0EDE6', borderRadius: 2 }} />
+            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 17, height: 17, background: '#C8FF57', borderRadius: 2 }} />
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '0.16em' }}>KORE</span>
+          <span style={{ fontSize: 12, color: '#555', marginLeft: 4 }}>Panel de gestion</span>
+        </div>
+        <Link href="/" style={{ fontSize: 12, color: '#888', textDecoration: 'none', border: '0.5px solid #333', borderRadius: 8, padding: '5px 12px' }}>
+          Vista empleado
+        </Link>
       </div>
 
       <div style={{ padding: '2rem 1.5rem', maxWidth: 900, margin: '0 auto' }}>
-
         {error && (
           <div style={{ background: '#FFF0F0', border: '0.5px solid #FFCCCC', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#C00', marginBottom: 16 }}>
             {error}
@@ -133,22 +122,12 @@ export default function PanelGestion() {
 
         {!empresaId ? (
           <div>
-            {/* Titulo del sector dentro del contenido */}
-            <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>
-              Panel de gestion
-            </p>
-            <h2 style={{ fontSize: 20, fontWeight: 400, color: '#0D0D0D', marginBottom: 6 }}>Selecciona la empresa</h2>
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Para ver el estado de todos los puestos.</p>
+            <h2 style={{ fontSize: 18, fontWeight: 500, color: '#0D0D0D', marginBottom: 6 }}>Selecciona la empresa</h2>
+            <p style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>Para ver el estado de todos los puestos.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 400 }}>
               {empresas.map(emp => (
                 <button key={emp.id} onClick={() => elegirEmpresa(emp.id, emp.nombre)}
-                  style={{
-                    textAlign: 'left', padding: '13px 16px',
-                    border: '0.5px solid #E0E0DA', borderRadius: 10,
-                    background: '#fff', cursor: 'pointer',
-                    fontSize: 14, color: '#0D0D0D',
-                    transition: 'border-color 0.15s',
-                  }}
+                  style={{ textAlign: 'left', padding: '12px 16px', border: '0.5px solid #E0E0DA', borderRadius: 10, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#0D0D0D' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
                 >
@@ -159,41 +138,22 @@ export default function PanelGestion() {
           </div>
         ) : (
           <>
-            {/* Titulo del sector + empresa */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 6 }}>
-                  Panel de gestion
-                </p>
-                <h2 style={{ fontSize: 20, fontWeight: 400, color: '#0D0D0D', marginBottom: 2 }}>{empresaNombre}</h2>
-                <p style={{ fontSize: 13, color: '#888' }}>
-                  {puestos.length} puesto{puestos.length !== 1 ? 's' : ''} · Estado en tiempo real
-                </p>
+                <h2 style={{ fontSize: 18, fontWeight: 500, color: '#0D0D0D', marginBottom: 2 }}>{empresaNombre}</h2>
+                <p style={{ fontSize: 13, color: '#888' }}>{puestos.length} puesto{puestos.length !== 1 ? 's' : ''} · Estado en tiempo real</p>
               </div>
-              <button
-                onClick={() => { setEmpresaId(''); setEmpresaNombre(''); }}
-                style={{
-                  fontSize: 12, color: '#888', background: 'none',
-                  border: '0.5px solid #E0E0DA', borderRadius: 8,
-                  padding: '6px 14px', cursor: 'pointer',
-                  alignSelf: 'flex-start',
-                }}
-              >
+              <button onClick={() => { setEmpresaId(''); setEmpresaNombre(''); }}
+                style={{ fontSize: 12, color: '#888', background: 'none', border: '0.5px solid #E0E0DA', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
                 Cambiar empresa
               </button>
             </div>
 
-            {/* Dashboard */}
             <div style={{ marginBottom: '2rem' }}>
               <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#aaa', marginBottom: 12 }}>
                 Dashboard de tareas
               </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-                gap: 10,
-                marginBottom: 16,
-              }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
                 {[
                   { label: 'Pendientes',  value: totalPendiente,  color: '#B8860B', bg: '#FFFBEA' },
                   { label: 'En progreso', value: totalEnProgreso, color: '#1565C0', bg: '#EBF3FF' },
@@ -201,12 +161,7 @@ export default function PanelGestion() {
                   { label: 'Completadas', value: totalCompletada, color: '#2E7D32', bg: '#F0FFF4' },
                   { label: 'Vencidas',    value: totalVencidas,   color: '#FF6B00', bg: '#FFF5EE' },
                 ].map(card => (
-                  <div key={card.label} style={{
-                    background: card.bg,
-                    border: `0.5px solid ${card.color}33`,
-                    borderRadius: 10,
-                    padding: '14px 16px',
-                  }}>
+                  <div key={card.label} style={{ background: card.bg, border: `0.5px solid ${card.color}33`, borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ fontSize: 24, fontWeight: 300, color: card.color, lineHeight: 1 }}>{card.value}</div>
                     <div style={{ fontSize: 11, color: card.color, marginTop: 4, letterSpacing: '0.04em' }}>{card.label}</div>
                   </div>
@@ -218,47 +173,40 @@ export default function PanelGestion() {
                   <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0EA', fontSize: 12, fontWeight: 500, color: '#555' }}>
                     Tareas por puesto
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 400 }}>
-                      <thead>
-                        <tr style={{ background: '#F9F9F7' }}>
-                          <th style={{ textAlign: 'left', padding: '8px 16px', color: '#aaa', fontWeight: 500 }}>Puesto</th>
-                          <th style={{ textAlign: 'center', padding: '8px 8px', color: '#B8860B', fontWeight: 500 }}>Pend.</th>
-                          <th style={{ textAlign: 'center', padding: '8px 8px', color: '#1565C0', fontWeight: 500 }}>Prog.</th>
-                          <th style={{ textAlign: 'center', padding: '8px 8px', color: '#C62828', fontWeight: 500 }}>Bloq.</th>
-                          <th style={{ textAlign: 'center', padding: '8px 8px', color: '#2E7D32', fontWeight: 500 }}>Comp.</th>
-                          <th style={{ textAlign: 'center', padding: '8px 16px', color: '#555', fontWeight: 500 }}>Total</th>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: '#F9F9F7' }}>
+                        <th style={{ textAlign: 'left', padding: '8px 16px', color: '#aaa', fontWeight: 500 }}>Puesto</th>
+                        <th style={{ textAlign: 'center', padding: '8px 8px', color: '#B8860B', fontWeight: 500 }}>Pend.</th>
+                        <th style={{ textAlign: 'center', padding: '8px 8px', color: '#1565C0', fontWeight: 500 }}>Prog.</th>
+                        <th style={{ textAlign: 'center', padding: '8px 8px', color: '#C62828', fontWeight: 500 }}>Bloq.</th>
+                        <th style={{ textAlign: 'center', padding: '8px 8px', color: '#2E7D32', fontWeight: 500 }}>Comp.</th>
+                        <th style={{ textAlign: 'center', padding: '8px 16px', color: '#555', fontWeight: 500 }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tareasPorPuesto.map((p, i) => (
+                        <tr key={p.nombre} style={{ borderTop: '0.5px solid #F0F0EA', background: i % 2 === 0 ? '#fff' : '#FAFAF8' }}>
+                          <td style={{ padding: '10px 16px', color: '#0D0D0D' }}>{p.nombre}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', color: '#B8860B' }}>{p.pendiente || '-'}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', color: '#1565C0' }}>{p.enProgreso || '-'}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', color: '#C62828' }}>{p.bloqueada || '-'}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 8px', color: '#2E7D32' }}>{p.completada || '-'}</td>
+                          <td style={{ textAlign: 'center', padding: '10px 16px', color: '#555', fontWeight: 500 }}>{p.total}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {tareasPorPuesto.map((p, i) => (
-                          <tr key={p.nombre} style={{ borderTop: '0.5px solid #F0F0EA', background: i % 2 === 0 ? '#fff' : '#FAFAF8' }}>
-                            <td style={{ padding: '10px 16px', color: '#0D0D0D' }}>{p.nombre}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 8px', color: '#B8860B' }}>{p.pendiente || '-'}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 8px', color: '#1565C0' }}>{p.enProgreso || '-'}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 8px', color: '#C62828' }}>{p.bloqueada || '-'}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 8px', color: '#2E7D32' }}>{p.completada || '-'}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 16px', color: '#555', fontWeight: 500 }}>{p.total}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
 
-            {/* Puestos */}
             {cargando ? (
               <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>Cargando puestos...</div>
             ) : puestos.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>No hay puestos cargados para esta empresa.</div>
             ) : (
-              <div style={{
-                display: 'grid',
-                gap: 12,
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-              }}>
+              <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
                 {puestos.map(p => {
                   const d = detalle[p.id] || { tareas: [], conversaciones: [] };
                   const tareasActivas = d.tareas.filter(t => t.estado === 'pendiente' || t.estado === 'en progreso').length;
@@ -266,13 +214,7 @@ export default function PanelGestion() {
                   const ultimaConv = d.conversaciones[0];
                   const hayBloqueo = d.tareas.some(t => t.estado === 'bloqueada');
                   return (
-                    <div key={p.id} style={{
-                      background: '#fff',
-                      border: `0.5px solid ${hayBloqueo ? '#FF9057' : '#E0E0DA'}`,
-                      borderRadius: 12,
-                      padding: '1.25rem',
-                      position: 'relative',
-                    }}>
+                    <div key={p.id} style={{ background: '#fff', border: `0.5px solid ${hayBloqueo ? '#FF9057' : '#E0E0DA'}`, borderRadius: 12, padding: '1.25rem', position: 'relative' }}>
                       {hayBloqueo && (
                         <div style={{ position: 'absolute', top: 12, right: 12, background: '#FF9057', color: '#fff', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.05em' }}>BLOQUEO</div>
                       )}
