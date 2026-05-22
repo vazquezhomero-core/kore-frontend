@@ -478,17 +478,11 @@ export default function Page() {
             <button onClick={() => setMenuAbierto(v => !v)} style={{ width: 34, height: 34, borderRadius: 8, background: menuAbierto ? '#222' : 'none', border: '0.5px solid #333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}>
               <IconoMenu />
             </button>
-            {contadorPendientes > 0 && (
-              <span style={{ position: 'absolute', top: -4, right: -4, background: '#C8FF57', color: '#0D0D0D', fontSize: 9, fontWeight: 700, borderRadius: 20, padding: '1px 5px', minWidth: 14, textAlign: 'center', pointerEvents: 'none' }}>
-                {contadorPendientes}
-              </span>
-            )}
             {menuAbierto && (
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
                 <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} activo />
                 {esGerente(puestoNombre) && <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />}
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
-                <MenuItem label={contadorPendientes > 0 ? `Tareas (${contadorPendientes})` : 'Tareas'} onClick={() => { setMenuAbierto(false); setPanelTareasAbierto(true); setFiltroEstado('todas'); }} />
                 <MenuItem label="Mensajes" onClick={() => { setMenuAbierto(false); setPanelMensajesAbierto(true); setHiloAbierto(null); cargarMensajesPuesto(puestoId); }} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
                 <MenuItem label="Cambiar puesto" onClick={cambiarPuesto} danger />
@@ -504,7 +498,12 @@ export default function Page() {
           <span style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D' }}>{puestoNombre}</span>
           <span style={{ fontSize: 11, color: '#999', marginLeft: 10 }}>{nombreEmpleado} · {empresaNombre}</span>
         </div>
-
+        {contadorPendientes > 0 && (
+          <button onClick={() => { setPanelTareasAbierto(true); setFiltroEstado('todas'); }}
+            style={{ background: '#C8FF57', border: 'none', borderRadius: 20, padding: '3px 10px', fontSize: 10, fontWeight: 600, color: '#0D0D0D', cursor: 'pointer', letterSpacing: '0.05em' }}>
+            {contadorPendientes} TAREA{contadorPendientes !== 1 ? 'S' : ''}
+          </button>
+        )}
       </div>
 
       {/* Layout dos columnas */}
