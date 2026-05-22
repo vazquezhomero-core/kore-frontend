@@ -8,10 +8,6 @@ function guardarSesion(datos) { try { localStorage.setItem(STORAGE_KEY, JSON.str
 function leerSesion() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } }
 function limpiarSesion() { try { localStorage.removeItem(STORAGE_KEY); } catch {} }
 
-function esGerente(nombrePuesto) {
-  return nombrePuesto?.toLowerCase().includes('gerente');
-}
-
 function SkeletonLista({ cantidad = 3 }) {
   return (
     <>
@@ -34,7 +30,13 @@ function IconoMenu() {
 }
 
 function MenuItem({ label, href, onClick, activo, danger }) {
-  const base = { display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 7, background: activo ? '#2A2A2A' : 'none', border: 'none', color: danger ? '#FF9057' : activo ? '#C8FF57' : '#F0EDE6', fontSize: 13, cursor: 'pointer', transition: 'background 0.1s', textDecoration: 'none', boxSizing: 'border-box' };
+  const base = {
+    display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px',
+    borderRadius: 7, background: activo ? '#2A2A2A' : 'none', border: 'none',
+    color: danger ? '#FF9057' : activo ? '#C8FF57' : '#F0EDE6',
+    fontSize: 13, cursor: 'pointer', transition: 'background 0.1s',
+    textDecoration: 'none', boxSizing: 'border-box',
+  };
   if (href) return (
     <a href={href} onClick={onClick} style={base}
       onMouseEnter={e => e.currentTarget.style.background = '#2A2A2A'}
@@ -65,8 +67,13 @@ const PRIORIDAD_CONFIG = {
 function BadgeEstado({ estado }) {
   const cfg = ESTADO_CONFIG[estado] || { label: estado, bg: '#F5F5F0', color: '#666', border: '#E0E0DA' };
   return (
-    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}`, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cfg.label}</span>
+    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}`, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cfg.label}</span>
   );
+}
+
+function BadgePrioridad({ prioridad }) {
+  const cfg = PRIORIDAD_CONFIG[prioridad] || { label: prioridad, color: '#666' };
+  return <span style={{ fontSize: 10, color: cfg.color, fontWeight: 500 }}>● {cfg.label}</span>;
 }
 
 function formatFecha(iso) {
@@ -77,7 +84,7 @@ function formatFecha(iso) {
   const str = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
   if (diff < 0) return { texto: `Vencio ${str}`, vencida: true };
   if (diff === 0) return { texto: 'Vence hoy', vencida: true };
-  if (diff <= 3) return { texto: `Vence ${str}`, urgente: true };
+  if (diff <= 3) return { texto: `Vence ${str}`, vencida: true };
   return { texto: `Vence ${str}`, vencida: false };
 }
 
@@ -95,95 +102,6 @@ function ordenarTareas(tareas) {
     if (ia !== ib) return ia - ib;
     return ['alta','media','baja'].indexOf(a.prioridad) - ['alta','media','baja'].indexOf(b.prioridad);
   });
-}
-
-// =============================================
-// PANEL IZQUIERDO — contexto del puesto
-// =============================================
-function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEstado, actualizandoTarea }) {
-  const hoy = new Date();
-  const tareasActivas = ordenarTareas(tareasPuesto.filter(t => t.estado !== 'completada'));
-  const proxVencimientos = tareasPuesto
-    .filter(t => t.fecha_vencimiento && t.estado !== 'completada')
-    .sort((a, b) => new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento))
-    .slice(0, 4);
-
-  const totalBloqueadas = tareasPuesto.filter(t => t.estado === 'bloqueada').length;
-  const totalEnProgreso = tareasPuesto.filter(t => t.estado === 'en progreso').length;
-  const totalPendientes = tareasPuesto.filter(t => t.estado === 'pendiente').length;
-
-  return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-      {/* Identidad del puesto */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 6 }}>Tu puesto</div>
-        <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', lineHeight: 1.3 }}>{puestoNombre}</div>
-        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{nombreEmpleado}</div>
-      </div>
-
-      {/* Resumen rápido */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-        {[
-          { label: 'Pendientes', value: totalPendientes, color: '#B8860B', bg: '#FFFBEA' },
-          { label: 'En curso',   value: totalEnProgreso, color: '#1565C0', bg: '#EBF3FF' },
-          { label: 'Bloqueadas', value: totalBloqueadas, color: '#C62828', bg: '#FFF0F0' },
-        ].map(c => (
-          <div key={c.label} style={{ background: c.bg, borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 300, color: c.color, lineHeight: 1 }}>{c.value}</div>
-            <div style={{ fontSize: 9, color: c.color, marginTop: 3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{c.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tareas activas */}
-      <div>
-        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Tareas activas</div>
-        {tareasActivas.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#ccc', textAlign: 'center', padding: '12px 0' }}>Sin tareas activas</div>
-        ) : tareasActivas.map(t => (
-          <div key={t.id} style={{ marginBottom: 8, padding: '10px', borderRadius: 8, background: '#fff', border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : '#E8E8E2'}` }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: '#0D0D0D', marginBottom: 5, lineHeight: 1.4 }}>{t.titulo}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-              <BadgeEstado estado={t.estado} />
-              {t.prioridad === 'alta' && <span style={{ fontSize: 9, color: '#C62828', fontWeight: 600 }}>● ALTA</span>}
-            </div>
-            {TRANSICIONES[t.estado]?.length > 0 && (
-              <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                {TRANSICIONES[t.estado].map(({ accion, estado: nuevoEstado }) => {
-                  const esPrimario = accion !== 'Bloquear';
-                  const cargando = actualizandoTarea === t.id;
-                  return (
-                    <button key={accion} onClick={() => onCambiarEstado(t.id, nuevoEstado)} disabled={cargando}
-                      style={{ flex: esPrimario ? 1 : 0, padding: '5px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: cargando ? 'default' : 'pointer', border: esPrimario ? 'none' : '0.5px solid #E0E0DA', background: cargando ? '#E0E0DA' : esPrimario ? '#0D0D0D' : '#fff', color: cargando ? '#999' : esPrimario ? '#C8FF57' : '#888', letterSpacing: '0.03em' }}>
-                      {cargando ? '...' : accion}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Proximos vencimientos */}
-      {proxVencimientos.length > 0 && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Proximos vencimientos</div>
-          {proxVencimientos.map(t => {
-            const f = formatFecha(t.fecha_vencimiento);
-            return (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid #F0F0EA' }}>
-                <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, marginRight: 8, lineHeight: 1.3 }}>{t.titulo}</div>
-                {f && <div style={{ fontSize: 10, color: f.vencida ? '#C62828' : f.urgente ? '#B8860B' : '#888', flexShrink: 0, fontWeight: f.vencida || f.urgente ? 600 : 400 }}>{f.vencida ? '⚠ ' : ''}{f.texto}</div>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-    </div>
-  );
 }
 
 export default function Page() {
@@ -234,14 +152,18 @@ export default function Page() {
     if (!empresaId || paso === 4) return;
     setCargandoLista(true); setPuestos([]);
     fetch(`${API}/empresas/${empresaId}/puestos`)
-      .then(r => r.json()).then(data => setPuestos(Array.isArray(data) ? data : []))
-      .catch(() => setError('Error al cargar puestos.')).finally(() => setCargandoLista(false));
+      .then(r => r.json())
+      .then(data => setPuestos(Array.isArray(data) ? data : []))
+      .catch(() => setError('Error al cargar puestos.'))
+      .finally(() => setCargandoLista(false));
   }, [empresaId]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [mensajes]);
 
   useEffect(() => {
-    function handleClick(e) { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(false); }
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuAbierto(false);
+    }
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
     return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('touchstart', handleClick); };
@@ -338,7 +260,6 @@ export default function Page() {
 
   const tareasParaPanel = ordenarTareas(filtroEstado === 'todas' ? tareasPuesto : tareasPuesto.filter(t => t.estado === filtroEstado));
   const contadorPendientes = tareasPuesto.filter(t => t.estado === 'pendiente' || t.estado === 'bloqueada').length;
-  const noLeidosCount = mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length;
 
   // =============================================
   // UI — SELECCION
@@ -348,6 +269,7 @@ export default function Page() {
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#F5F5F0' }}>
         <style>{`@keyframes pulso{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes girar{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
+        {/* Header — logo + menu hamburguesa */}
         <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '0 16px', display: 'flex', alignItems: 'center', minHeight: 52, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
             <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
@@ -369,6 +291,7 @@ export default function Page() {
           </div>
         </div>
 
+        {/* Contenido centrado */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: '0.5px solid #E0E0DA' }}>
             <div style={{ display: 'flex', gap: 6, marginBottom: '1.75rem' }}>
@@ -394,6 +317,7 @@ export default function Page() {
                 ))}
               </>
             )}
+
             {paso === 2 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -412,6 +336,7 @@ export default function Page() {
                 ))}
               </>
             )}
+
             {paso === 3 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -436,7 +361,7 @@ export default function Page() {
   }
 
   // =============================================
-  // UI — CHAT (paso 4) — layout dos columnas
+  // UI — CHAT
   // =============================================
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#F5F5F0' }}>
@@ -444,14 +369,11 @@ export default function Page() {
         @keyframes bote { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-5px);opacity:1} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{transform:translateX(100%)} to{transform:translateX(0)} }
-        @media (max-width: 768px) {
-          .layout-cols { flex-direction: column !important; }
-          .col-contexto { display: none !important; }
-        }
       `}</style>
 
       {/* Header */}
       <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '0 16px', display: 'flex', alignItems: 'center', flexShrink: 0, minHeight: 52 }}>
+        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
           <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
             <div style={{ position: 'absolute', top: 0, left: 0, width: 17, height: 17, border: '1.5px solid #F0EDE6', borderRadius: 2 }} />
@@ -460,20 +382,31 @@ export default function Page() {
           <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '0.16em' }}>KORE</span>
         </div>
 
+        {/* Controles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={async () => {
               setPanelMensajesAbierto(true); setHiloAbierto(null); cargarMensajesPuesto(puestoId);
               if (puestos.length === 0) { const res = await fetch(`${API}/empresas/${empresaId}/puestos`); const data = await res.json(); setPuestos(Array.isArray(data) ? data : []); }
             }}
-            style={{ position: 'relative', background: 'transparent', border: '0.5px solid #444', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: noLeidosCount > 0 ? '#C8FF57' : '#666', cursor: 'pointer', letterSpacing: '0.05em' }}
+            style={{ position: 'relative', background: 'transparent', border: '0.5px solid #444', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#666', cursor: 'pointer', letterSpacing: '0.05em' }}
           >
             MENSAJES
-            {noLeidosCount > 0 && (
-              <span style={{ position: 'absolute', top: -4, right: -4, background: '#E53935', color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 20, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>{noLeidosCount}</span>
+            {mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length > 0 && (
+              <span style={{ position: 'absolute', top: -4, right: -4, background: '#E53935', color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 20, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>
+                {mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length}
+              </span>
             )}
           </button>
 
+          <button
+            onClick={() => { setPanelTareasAbierto(true); setFiltroEstado('todas'); }}
+            style={{ background: contadorPendientes > 0 ? '#C8FF57' : 'transparent', border: contadorPendientes > 0 ? 'none' : '0.5px solid #444', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: contadorPendientes > 0 ? '#0D0D0D' : '#666', cursor: 'pointer', letterSpacing: '0.05em' }}
+          >
+            {contadorPendientes > 0 ? `${contadorPendientes} TAREA${contadorPendientes !== 1 ? 'S' : ''}` : 'SIN TAREAS'}
+          </button>
+
+          {/* Menu hamburguesa */}
           <div ref={menuRef} style={{ position: 'relative' }}>
             <button onClick={() => setMenuAbierto(v => !v)} style={{ width: 34, height: 34, borderRadius: 8, background: menuAbierto ? '#222' : 'none', border: '0.5px solid #333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s' }}>
               <IconoMenu />
@@ -481,8 +414,9 @@ export default function Page() {
             {menuAbierto && (
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
                 <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} activo />
-                {esGerente(puestoNombre) && <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />}
+                <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
+                <MenuItem label="Tareas" onClick={() => { setMenuAbierto(false); setPanelTareasAbierto(true); setFiltroEstado('todas'); }} />
                 <MenuItem label="Mensajes" onClick={() => { setMenuAbierto(false); setPanelMensajesAbierto(true); setHiloAbierto(null); cargarMensajesPuesto(puestoId); }} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
                 <MenuItem label="Cambiar puesto" onClick={cambiarPuesto} danger />
@@ -493,79 +427,46 @@ export default function Page() {
       </div>
 
       {/* Titulo del sector */}
-      <div style={{ background: '#ECECEA', borderBottom: '0.5px solid #E0E0DA', padding: '8px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D' }}>{puestoNombre}</span>
-          <span style={{ fontSize: 11, color: '#999', marginLeft: 10 }}>{nombreEmpleado} · {empresaNombre}</span>
-        </div>
-        {contadorPendientes > 0 && (
-          <button onClick={() => { setPanelTareasAbierto(true); setFiltroEstado('todas'); }}
-            style={{ background: '#C8FF57', border: 'none', borderRadius: 20, padding: '3px 10px', fontSize: 10, fontWeight: 600, color: '#0D0D0D', cursor: 'pointer', letterSpacing: '0.05em' }}>
-            {contadorPendientes} TAREA{contadorPendientes !== 1 ? 'S' : ''}
-          </button>
-        )}
+      <div style={{ background: '#F5F5F0', borderBottom: '0.5px solid #E8E8E2', padding: '10px 16px', flexShrink: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D' }}>{puestoNombre}</div>
+        <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{nombreEmpleado} · {empresaNombre}</div>
       </div>
 
-      {/* Layout dos columnas */}
-      <div className="layout-cols" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-        {/* Columna izquierda — contexto del puesto */}
-        <div className="col-contexto" style={{ width: 280, flexShrink: 0, borderRight: '0.5px solid #E0E0DA', background: '#FAFAF8', overflow: 'hidden' }}>
-          <PanelContexto
-            tareasPuesto={tareasPuesto}
-            puestoNombre={puestoNombre}
-            nombreEmpleado={nombreEmpleado}
-            onCambiarEstado={cambiarEstadoTarea}
-            actualizandoTarea={actualizandoTarea}
-          />
-        </div>
-
-        {/* Columna derecha — chat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem' }}>
-            {mensajes.length === 0 && (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '4rem', lineHeight: 1.8 }}>
-                Hola <strong style={{ color: '#0D0D0D' }}>{nombreEmpleado}</strong>, soy la inteligencia<br />
-                del puesto <strong style={{ color: '#0D0D0D' }}>{puestoNombre}</strong>.<br />
-                En que trabajamos hoy?
-              </div>
-            )}
-            {mensajes.map((m, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: m.rol === 'usuario' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-                <div style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', fontSize: 14, lineHeight: 1.65, background: m.rol === 'usuario' ? '#0D0D0D' : '#fff', color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D', border: m.rol === 'kore' ? '0.5px solid #E0E0DA' : 'none', whiteSpace: 'pre-wrap' }}>
-                  {m.texto}
-                </div>
-              </div>
-            ))}
-
-            {tareasPendientes && (
-              <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
-                <button onClick={aprobarAsignaciones} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: aprobando ? '#E0E0DA' : '#0D0D0D', color: aprobando ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: aprobando ? 'default' : 'pointer' }}>
-                  {aprobando ? 'Asignando...' : `Aprobar ${tareasPendientes.tareas.length} tarea${tareasPendientes.tareas.length !== 1 ? 's' : ''}`}
-                </button>
-                <button onClick={() => setTareasPendientes(null)} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>Modificar</button>
-              </div>
-            )}
-
-            {cargando && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
-                <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#fff', border: '0.5px solid #E0E0DA', display: 'flex', gap: 5, alignItems: 'center' }}>
-                  {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8FF57', animation: 'bote 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
-                </div>
-              </div>
-            )}
-            {error && <p style={{ color: '#C00', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>{error}</p>}
-            <div ref={bottomRef} />
+      {/* Mensajes */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1rem' }}>
+        {mensajes.length === 0 && (
+          <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '4rem', lineHeight: 1.8 }}>
+            Hola <strong style={{ color: '#0D0D0D' }}>{nombreEmpleado}</strong>, soy la inteligencia<br />
+            del puesto <strong style={{ color: '#0D0D0D' }}>{puestoNombre}</strong>.<br />
+            En que trabajamos hoy?
           </div>
+        )}
+        {mensajes.map((m, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: m.rol === 'usuario' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+            <div style={{ maxWidth: '78%', padding: '10px 14px', borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', fontSize: 14, lineHeight: 1.65, background: m.rol === 'usuario' ? '#0D0D0D' : '#fff', color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D', border: m.rol === 'kore' ? '0.5px solid #E0E0DA' : 'none', whiteSpace: 'pre-wrap' }}>
+              {m.texto}
+            </div>
+          </div>
+        ))}
 
-          {/* Input */}
-          <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
-            <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribi tu mensaje..." disabled={cargando}
-              style={{ flex: 1, padding: '10px 14px', border: '0.5px solid #E0E0DA', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#fff' }} />
-            <button type="submit" disabled={cargando || !input.trim()}
-              style={{ padding: '10px 18px', background: cargando || !input.trim() ? '#E0E0DA' : '#0D0D0D', color: cargando || !input.trim() ? '#999' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
-          </form>
-        </div>
+        {tareasPendientes && (
+          <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
+            <button onClick={aprobarAsignaciones} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: aprobando ? '#E0E0DA' : '#0D0D0D', color: aprobando ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: aprobando ? 'default' : 'pointer' }}>
+              {aprobando ? 'Asignando...' : `Aprobar ${tareasPendientes.tareas.length} tarea${tareasPendientes.tareas.length !== 1 ? 's' : ''}`}
+            </button>
+            <button onClick={() => setTareasPendientes(null)} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>Modificar</button>
+          </div>
+        )}
+
+        {cargando && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+            <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#fff', border: '0.5px solid #E0E0DA', display: 'flex', gap: 5, alignItems: 'center' }}>
+              {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8FF57', animation: 'bote 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
+            </div>
+          </div>
+        )}
+        {error && <p style={{ color: '#C00', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>{error}</p>}
+        <div ref={bottomRef} />
       </div>
 
       {/* Panel lateral de tareas */}
@@ -575,7 +476,9 @@ export default function Page() {
           <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#fff', borderLeft: '0.5px solid #E0E0DA', zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.1)', animation: 'slideIn 0.2s ease-out' }}>
             <div style={{ padding: '16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>Tareas {tareasPuesto.length > 0 && <span style={{ background: '#F5F5F0', color: '#666', borderRadius: 20, padding: '1px 8px', fontSize: 11, marginLeft: 8, border: '0.5px solid #E0E0DA' }}>{tareasPuesto.length}</span>}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>
+                  Tareas {tareasPuesto.length > 0 && <span style={{ background: '#F5F5F0', color: '#666', borderRadius: 20, padding: '1px 8px', fontSize: 11, marginLeft: 8, border: '0.5px solid #E0E0DA' }}>{tareasPuesto.length}</span>}
+                </div>
                 <button onClick={() => setPanelTareasAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -601,7 +504,7 @@ export default function Page() {
                     {t.descripcion && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5, marginBottom: 8 }}>{t.descripcion}</div>}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <BadgeEstado estado={t.estado} />
-                      {t.prioridad && <span style={{ fontSize: 10, color: PRIORIDAD_CONFIG[t.prioridad]?.color || '#666', fontWeight: 500 }}>● {PRIORIDAD_CONFIG[t.prioridad]?.label || t.prioridad}</span>}
+                      {t.prioridad && <BadgePrioridad prioridad={t.prioridad} />}
                       {fecha && <span style={{ fontSize: 10, color: fecha.vencida ? '#C62828' : '#888', marginLeft: 'auto' }}>{fecha.vencida ? '⚠ ' : ''}{fecha.texto}</span>}
                     </div>
                     {TRANSICIONES[t.estado]?.length > 0 && (
@@ -714,6 +617,14 @@ export default function Page() {
           </>
         );
       })()}
+
+      {/* Input */}
+      <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
+        <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribi tu mensaje..." disabled={cargando}
+          style={{ flex: 1, padding: '10px 14px', border: '0.5px solid #E0E0DA', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#fff' }} />
+        <button type="submit" disabled={cargando || !input.trim()}
+          style={{ padding: '10px 18px', background: cargando || !input.trim() ? '#E0E0DA' : '#0D0D0D', color: cargando || !input.trim() ? '#999' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
+      </form>
     </div>
   );
 }
