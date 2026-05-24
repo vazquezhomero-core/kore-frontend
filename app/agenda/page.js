@@ -35,17 +35,5 @@ export default function Agenda() {
     setEventos(prev => prev.filter(e => e.id !== id));
   };
 
-  // Días del mes actual
   const diasEnMes = () => {
     const year = mes.getFullYear();
-    const month = mes.getMonth();
-    const primer = new Date(year, month, 1).getDay();
-    const total = new Date(year, month + 1, 0).getDate();
-    return { primer, total };
-  };
-
-  const { primer, total } = diasEnMes();
-  const nombreMes = mes.toLocaleString('es-AR', { month: 'long', year: 'numeric' });
-
-  const eventosDia = (dia) => {
-    const fecha = `${mes.getF
