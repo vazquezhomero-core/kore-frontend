@@ -488,6 +488,7 @@ export default function Page() {
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
                 <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} activo />
                 {esGerente(puestoNombre) && <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />}
+                <MenuItem label="Agenda" href="/agenda" onClick={() => setMenuAbierto(false)} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
                 <MenuItem label={contadorPendientes > 0 ? `Tareas (${contadorPendientes})` : 'Tareas'} onClick={() => { setMenuAbierto(false); setPanelTareasAbierto(true); setFiltroEstado('todas'); }} />
                 <MenuItem label="Mensajes" onClick={() => { setMenuAbierto(false); setPanelMensajesAbierto(true); setHiloAbierto(null); cargarMensajesPuesto(puestoId); }} />
