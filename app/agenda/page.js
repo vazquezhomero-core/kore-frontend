@@ -9,7 +9,8 @@ export default function Agenda() {
   const [mes, setMes] = useState(new Date());
 
   useEffect(() => {
-    const pid = localStorage.getItem('kore_puesto_id');
+    const sesion = JSON.parse(localStorage.getItem('kore_sesion') || 'null');
+    const pid = sesion?.puestoId;
     if (pid) cargarEventos(pid);
     else setLoading(false);
   }, []);
