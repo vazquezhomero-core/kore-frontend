@@ -214,6 +214,7 @@ export default function Page() {
   const [textoMensaje, setTextoMensaje] = useState('');
   const [enviandoMensaje, setEnviandoMensaje] = useState(false);
   const [hiloAbierto, setHiloAbierto] = useState(null);
+  const [eventoSugerido, setEventoSugerido] = useState(null);
 
   const bottomRef = useRef(null);
   const menuRef = useRef(null);
@@ -307,6 +308,7 @@ export default function Page() {
       const data = await res.json();
       setMensajes(prev => [...prev, { rol: 'kore', texto: data.respuesta || data.error || 'Sin respuesta.' }]);
       if (data.tareas_sugeridas?.length > 0) setTareasPendientes({ tareas: data.tareas_sugeridas, puesto_origen_id: puestoId });
+      if (data.evento_sugerido) setEventoSugerido(data.evento_sugerido);
       cargarTareasPuesto(puestoId);
     } catch { setError('Error de conexion.'); }
     finally { setCargando(false); }
@@ -540,6 +542,23 @@ export default function Page() {
                 </div>
               </div>
             ))}
+            {eventoSugerido && (
+  <div style={{ display: 'flex', gap: 8, padding: '8px 0', alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ fontSize: 13, color: '#0D0D0D', flex: 1 }}>
+      Agendar: <strong>{eventoSugerido.titulo}</strong> · {eventoSugerido.fecha}{eventoSugerido.hora_inicio ? ` · ${eventoSugerido.hora_inicio}` : ''}
+    </div>
+    <button onClick={async () => {
+      try {
+        await fetch(`${API}/eventos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, ...eventoSugerido }) });
+        setMensajes(prev => [...prev, { rol: 'kore', texto: `✓ Evento "${eventoSugerido.titulo}" agendado para el ${eventoSugerido.fecha}.` }]);
+        setEventoSugerido(null);
+      } catch { setError('Error al crear evento.'); }
+    }} style={{ padding: '7px 16px', borderRadius: 10, border: 'none', background: '#0D0D0D', color: '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+      Agendar
+    </button>
+    <button onClick={() => setEventoSugerido(null)} style={{ padding: '7px 16px', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
+  </div>
+)}
 
             {tareasPendientes && (
               <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
