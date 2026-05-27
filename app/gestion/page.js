@@ -5,13 +5,13 @@ import Link from 'next/link';
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://core-backend-production-9f3f.up.railway.app';
 
 const ESTADO_CONFIG = {
-  pendiente:     { label: 'Pendiente',   color: '#B8860B', bg: '#E0E0DA' },
+  pendiente:     { label: 'Pendiente',   color: '#B8860B', bg: '#E8E8E4' },
   'en progreso': { label: 'En progreso', color: '#1565C0', bg: '#C8FF57' },
   bloqueada:     { label: 'Bloqueada',   color: '#C62828', bg: '#FF9057' },
   completada:    { label: 'Completada',  color: '#2E7D32', bg: '#57C8FF' },
 };
 
-function estadoColor(estado) { return ESTADO_CONFIG[estado]?.bg || '#E0E0DA'; }
+function estadoColor(estado) { return ESTADO_CONFIG[estado]?.bg || '#D0D0CC'; }
 function estadoTexto(estado) { return ESTADO_CONFIG[estado]?.label || estado; }
 
 function IconoMenu() {
@@ -42,7 +42,6 @@ function HeaderKore({ onCambiarEmpresa, empresaId }) {
 
   return (
     <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '0 16px', display: 'flex', alignItems: 'center', minHeight: 52, flexShrink: 0 }}>
-      {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 'auto' }}>
         <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: 17, height: 17, border: '1.5px solid #F0EDE6', borderRadius: 2 }} />
@@ -51,7 +50,6 @@ function HeaderKore({ onCambiarEmpresa, empresaId }) {
         <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '0.16em' }}>KORE</span>
       </div>
 
-      {/* Menu hamburguesa */}
       <div ref={menuRef} style={{ position: 'relative' }}>
         <button
           onClick={() => setMenuAbierto(v => !v)}
@@ -63,9 +61,9 @@ function HeaderKore({ onCambiarEmpresa, empresaId }) {
         {menuAbierto && (
           <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
             <style>{`@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }`}</style>
-
             <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} />
             <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} activo />
+            <MenuItem label="Agenda" href="/agenda" onClick={() => setMenuAbierto(false)} />
             {empresaId && onCambiarEmpresa && (
               <MenuItem label="Cambiar empresa" onClick={() => { setMenuAbierto(false); onCambiarEmpresa(); }} />
             )}
@@ -160,25 +158,25 @@ export default function PanelGestion() {
   }).filter(p => p.total > 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F5F5F0' }}>
+    <div style={{ minHeight: '100vh', background: '#C8C8C4' }}>
       <HeaderKore empresaId={empresaId} onCambiarEmpresa={cambiarEmpresa} />
 
       <div style={{ padding: '2rem 1.5rem', maxWidth: 900, margin: '0 auto' }}>
         {error && (
-          <div style={{ background: '#FFF0F0', border: '0.5px solid #FFCCCC', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#C00', marginBottom: 16 }}>{error}</div>
+          <div style={{ background: '#FDECEA', border: '0.5px solid #EF9A9A', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#C62828', marginBottom: 16 }}>{error}</div>
         )}
 
         {!empresaId ? (
           <div>
-            <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Panel de gestion</p>
+            <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Panel de gestion</p>
             <h2 style={{ fontSize: 20, fontWeight: 400, color: '#0D0D0D', marginBottom: 6 }}>Selecciona la empresa</h2>
-            <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>Para ver el estado de todos los puestos.</p>
+            <p style={{ fontSize: 13, color: '#555555', marginBottom: 24 }}>Para ver el estado de todos los puestos.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 400 }}>
               {empresas.map(emp => (
                 <button key={emp.id} onClick={() => elegirEmpresa(emp.id, emp.nombre)}
-                  style={{ textAlign: 'left', padding: '13px 16px', border: '0.5px solid #E0E0DA', borderRadius: 10, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#0D0D0D', transition: 'border-color 0.15s' }}
+                  style={{ textAlign: 'left', padding: '13px 16px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, background: '#E8E8E4', cursor: 'pointer', fontSize: 14, color: '#0D0D0D', transition: 'border-color 0.15s' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(13,13,13,0.15)'}
                 >{emp.nombre}</button>
               ))}
             </div>
@@ -187,21 +185,22 @@ export default function PanelGestion() {
           <>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 6 }}>Panel de gestion</p>
+                <p style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 6 }}>Panel de gestion</p>
                 <h2 style={{ fontSize: 20, fontWeight: 400, color: '#0D0D0D', marginBottom: 2 }}>{empresaNombre}</h2>
-                <p style={{ fontSize: 13, color: '#888' }}>{puestos.length} puesto{puestos.length !== 1 ? 's' : ''} · Estado en tiempo real</p>
+                <p style={{ fontSize: 13, color: '#555555' }}>{puestos.length} puesto{puestos.length !== 1 ? 's' : ''} · Estado en tiempo real</p>
               </div>
             </div>
 
+            {/* Dashboard de tareas */}
             <div style={{ marginBottom: '2rem' }}>
-              <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#aaa', marginBottom: 12 }}>Dashboard de tareas</div>
+              <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#888888', marginBottom: 12 }}>Dashboard de tareas</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 16 }}>
                 {[
-                  { label: 'Pendientes',  value: totalPendiente,  color: '#B8860B', bg: '#FFFBEA' },
-                  { label: 'En progreso', value: totalEnProgreso, color: '#1565C0', bg: '#EBF3FF' },
-                  { label: 'Bloqueadas',  value: totalBloqueada,  color: '#C62828', bg: '#FFF0F0' },
-                  { label: 'Completadas', value: totalCompletada, color: '#2E7D32', bg: '#F0FFF4' },
-                  { label: 'Vencidas',    value: totalVencidas,   color: '#FF6B00', bg: '#FFF5EE' },
+                  { label: 'Pendientes',  value: totalPendiente,  color: '#B8860B', bg: '#FFF8E1' },
+                  { label: 'En progreso', value: totalEnProgreso, color: '#1565C0', bg: '#E8F4FD' },
+                  { label: 'Bloqueadas',  value: totalBloqueada,  color: '#C62828', bg: '#FDECEA' },
+                  { label: 'Completadas', value: totalCompletada, color: '#2E7D32', bg: '#F0F9F0' },
+                  { label: 'Vencidas',    value: totalVencidas,   color: '#FF6B00', bg: '#FFF3E0' },
                 ].map(card => (
                   <div key={card.label} style={{ background: card.bg, border: `0.5px solid ${card.color}33`, borderRadius: 10, padding: '14px 16px' }}>
                     <div style={{ fontSize: 24, fontWeight: 300, color: card.color, lineHeight: 1 }}>{card.value}</div>
@@ -211,29 +210,29 @@ export default function PanelGestion() {
               </div>
 
               {tareasPorPuesto.length > 0 && (
-                <div style={{ background: '#fff', border: '0.5px solid #E0E0DA', borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0EA', fontSize: 12, fontWeight: 500, color: '#555' }}>Tareas por puesto</div>
+                <div style={{ background: '#E8E8E4', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 16px', borderBottom: `0.5px solid rgba(13,13,13,0.15)`, fontSize: 12, fontWeight: 500, color: '#555555' }}>Tareas por puesto</div>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 400 }}>
                       <thead>
-                        <tr style={{ background: '#F9F9F7' }}>
-                          <th style={{ textAlign: 'left', padding: '8px 16px', color: '#aaa', fontWeight: 500 }}>Puesto</th>
+                        <tr style={{ background: '#D8D8D4' }}>
+                          <th style={{ textAlign: 'left', padding: '8px 16px', color: '#888888', fontWeight: 500 }}>Puesto</th>
                           <th style={{ textAlign: 'center', padding: '8px 8px', color: '#B8860B', fontWeight: 500 }}>Pend.</th>
                           <th style={{ textAlign: 'center', padding: '8px 8px', color: '#1565C0', fontWeight: 500 }}>Prog.</th>
                           <th style={{ textAlign: 'center', padding: '8px 8px', color: '#C62828', fontWeight: 500 }}>Bloq.</th>
                           <th style={{ textAlign: 'center', padding: '8px 8px', color: '#2E7D32', fontWeight: 500 }}>Comp.</th>
-                          <th style={{ textAlign: 'center', padding: '8px 16px', color: '#555', fontWeight: 500 }}>Total</th>
+                          <th style={{ textAlign: 'center', padding: '8px 16px', color: '#555555', fontWeight: 500 }}>Total</th>
                         </tr>
                       </thead>
                       <tbody>
                         {tareasPorPuesto.map((p, i) => (
-                          <tr key={p.nombre} style={{ borderTop: '0.5px solid #F0F0EA', background: i % 2 === 0 ? '#fff' : '#FAFAF8' }}>
+                          <tr key={p.nombre} style={{ borderTop: `0.5px solid rgba(13,13,13,0.1)`, background: i % 2 === 0 ? '#E8E8E4' : '#DEDED9' }}>
                             <td style={{ padding: '10px 16px', color: '#0D0D0D' }}>{p.nombre}</td>
                             <td style={{ textAlign: 'center', padding: '10px 8px', color: '#B8860B' }}>{p.pendiente || '-'}</td>
                             <td style={{ textAlign: 'center', padding: '10px 8px', color: '#1565C0' }}>{p.enProgreso || '-'}</td>
                             <td style={{ textAlign: 'center', padding: '10px 8px', color: '#C62828' }}>{p.bloqueada || '-'}</td>
                             <td style={{ textAlign: 'center', padding: '10px 8px', color: '#2E7D32' }}>{p.completada || '-'}</td>
-                            <td style={{ textAlign: 'center', padding: '10px 16px', color: '#555', fontWeight: 500 }}>{p.total}</td>
+                            <td style={{ textAlign: 'center', padding: '10px 16px', color: '#555555', fontWeight: 500 }}>{p.total}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -243,10 +242,11 @@ export default function PanelGestion() {
               )}
             </div>
 
+            {/* Cards de puestos */}
             {cargando ? (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>Cargando puestos...</div>
+              <div style={{ textAlign: 'center', color: '#888888', fontSize: 14, marginTop: '3rem' }}>Cargando puestos...</div>
             ) : puestos.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '3rem' }}>No hay puestos cargados para esta empresa.</div>
+              <div style={{ textAlign: 'center', color: '#888888', fontSize: 14, marginTop: '3rem' }}>No hay puestos cargados para esta empresa.</div>
             ) : (
               <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))' }}>
                 {puestos.map(p => {
@@ -256,39 +256,39 @@ export default function PanelGestion() {
                   const ultimaConv = d.conversaciones[0];
                   const hayBloqueo = d.tareas.some(t => t.estado === 'bloqueada');
                   return (
-                    <div key={p.id} style={{ background: '#fff', border: `0.5px solid ${hayBloqueo ? '#FF9057' : '#E0E0DA'}`, borderRadius: 12, padding: '1.25rem', position: 'relative' }}>
+                    <div key={p.id} style={{ background: '#E8E8E4', border: `0.5px solid ${hayBloqueo ? '#FF9057' : 'rgba(13,13,13,0.15)'}`, borderRadius: 12, padding: '1.25rem', position: 'relative' }}>
                       {hayBloqueo && (
                         <div style={{ position: 'absolute', top: 12, right: 12, background: '#FF9057', color: '#fff', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.05em' }}>BLOQUEO</div>
                       )}
                       <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', marginBottom: 14, paddingRight: hayBloqueo ? 70 : 0 }}>{p.nombre}</div>
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Tareas</div>
+                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Tareas</div>
                         {tareasTotal === 0 ? (
-                          <div style={{ fontSize: 12, color: '#ccc' }}>Sin tareas asignadas</div>
+                          <div style={{ fontSize: 12, color: '#888888' }}>Sin tareas asignadas</div>
                         ) : (
                           <>
                             {d.tareas.slice(0, 3).map(t => (
                               <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                                 <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: estadoColor(t.estado) }} />
                                 <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, lineHeight: 1.4 }}>{t.titulo || t.descripcion}</div>
-                                <div style={{ fontSize: 10, color: '#aaa', flexShrink: 0 }}>{estadoTexto(t.estado)}</div>
+                                <div style={{ fontSize: 10, color: '#555555', flexShrink: 0 }}>{estadoTexto(t.estado)}</div>
                               </div>
                             ))}
-                            {tareasTotal > 3 && <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>+{tareasTotal - 3} mas</div>}
+                            {tareasTotal > 3 && <div style={{ fontSize: 11, color: '#888888', marginTop: 4 }}>+{tareasTotal - 3} mas</div>}
                           </>
                         )}
                       </div>
-                      <div style={{ borderTop: '0.5px solid #F0F0EA', paddingTop: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Ultima actividad</div>
+                      <div style={{ borderTop: `0.5px solid rgba(13,13,13,0.15)`, paddingTop: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#888888', marginBottom: 4 }}>Ultima actividad</div>
                         {ultimaConv ? (
-                          <div style={{ fontSize: 12, color: '#888' }}>
+                          <div style={{ fontSize: 12, color: '#555555' }}>
                             {new Date(ultimaConv.updated_at || ultimaConv.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           </div>
                         ) : (
-                          <div style={{ fontSize: 12, color: '#ccc' }}>Sin conversaciones</div>
+                          <div style={{ fontSize: 12, color: '#888888' }}>Sin conversaciones</div>
                         )}
                       </div>
-                      <div style={{ marginTop: 12, background: '#F5F5F0', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#555' }}>
+                      <div style={{ marginTop: 12, background: '#C8C8C4', borderRadius: 8, padding: '8px 10px', fontSize: 12, color: '#555555' }}>
                         {tareasActivas > 0 ? `${tareasActivas} tarea${tareasActivas !== 1 ? 's' : ''} activa${tareasActivas !== 1 ? 's' : ''}` : 'Sin tareas activas'}
                         {' · '}
                         {d.conversaciones.length} conversacion{d.conversaciones.length !== 1 ? 'es' : ''}

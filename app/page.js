@@ -17,7 +17,7 @@ function SkeletonLista({ cantidad = 3 }) {
     <>
       <style>{`@keyframes pulso { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
       {Array.from({ length: cantidad }).map((_, i) => (
-        <div key={i} style={{ width: '100%', height: 44, borderRadius: 10, marginBottom: 8, background: '#E0E0DA', animation: 'pulso 1.4s ease-in-out infinite', animationDelay: `${i * 0.15}s` }} />
+        <div key={i} style={{ width: '100%', height: 44, borderRadius: 10, marginBottom: 8, background: '#D0D0CC', animation: 'pulso 1.4s ease-in-out infinite', animationDelay: `${i * 0.15}s` }} />
       ))}
     </>
   );
@@ -63,7 +63,7 @@ const PRIORIDAD_CONFIG = {
 };
 
 function BadgeEstado({ estado }) {
-  const cfg = ESTADO_CONFIG[estado] || { label: estado, bg: '#F5F5F0', color: '#666', border: '#E0E0DA' };
+  const cfg = ESTADO_CONFIG[estado] || { label: estado, bg: '#E8E8E4', color: '#666', border: '#D0D0CC' };
   return (
     <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}`, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{cfg.label}</span>
   );
@@ -101,7 +101,6 @@ function ordenarTareas(tareas) {
 // PANEL IZQUIERDO — contexto del puesto
 // =============================================
 function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEstado, actualizandoTarea }) {
-  const hoy = new Date();
   const tareasActivas = ordenarTareas(tareasPuesto.filter(t => t.estado !== 'completada'));
   const proxVencimientos = tareasPuesto
     .filter(t => t.fecha_vencimiento && t.estado !== 'completada')
@@ -117,17 +116,17 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
 
       {/* Identidad del puesto */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 6 }}>Tu puesto</div>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 6 }}>Tu puesto</div>
         <div style={{ fontSize: 15, fontWeight: 500, color: '#0D0D0D', lineHeight: 1.3 }}>{puestoNombre}</div>
-        <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{nombreEmpleado}</div>
+        <div style={{ fontSize: 12, color: '#555555', marginTop: 2 }}>{nombreEmpleado}</div>
       </div>
 
-      {/* Resumen rápido */}
+      {/* Resumen rapido */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
         {[
-          { label: 'Pendientes', value: totalPendientes, color: '#B8860B', bg: '#FFFBEA' },
-          { label: 'En curso',   value: totalEnProgreso, color: '#1565C0', bg: '#EBF3FF' },
-          { label: 'Bloqueadas', value: totalBloqueadas, color: '#C62828', bg: '#FFF0F0' },
+          { label: 'Pendientes', value: totalPendientes, color: '#B8860B', bg: '#FFF8E1' },
+          { label: 'En curso',   value: totalEnProgreso, color: '#1565C0', bg: '#E8F4FD' },
+          { label: 'Bloqueadas', value: totalBloqueadas, color: '#C62828', bg: '#FDECEA' },
         ].map(c => (
           <div key={c.label} style={{ background: c.bg, borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
             <div style={{ fontSize: 18, fontWeight: 300, color: c.color, lineHeight: 1 }}>{c.value}</div>
@@ -138,11 +137,11 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
 
       {/* Tareas activas */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Tareas activas</div>
+        <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Tareas activas</div>
         {tareasActivas.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#ccc', textAlign: 'center', padding: '12px 0' }}>Sin tareas activas</div>
+          <div style={{ fontSize: 12, color: '#888888', textAlign: 'center', padding: '12px 0' }}>Sin tareas activas</div>
         ) : tareasActivas.map(t => (
-          <div key={t.id} style={{ marginBottom: 8, padding: '10px', borderRadius: 8, background: '#fff', border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : '#E8E8E2'}` }}>
+          <div key={t.id} style={{ marginBottom: 8, padding: '10px', borderRadius: 8, background: '#E8E8E4', border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : 'rgba(13,13,13,0.15)'}` }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: '#0D0D0D', marginBottom: 5, lineHeight: 1.4 }}>{t.titulo}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
               <BadgeEstado estado={t.estado} />
@@ -155,7 +154,7 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
                   const cargando = actualizandoTarea === t.id;
                   return (
                     <button key={accion} onClick={() => onCambiarEstado(t.id, nuevoEstado)} disabled={cargando}
-                      style={{ flex: esPrimario ? 1 : 0, padding: '5px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: cargando ? 'default' : 'pointer', border: esPrimario ? 'none' : '0.5px solid #E0E0DA', background: cargando ? '#E0E0DA' : esPrimario ? '#0D0D0D' : '#fff', color: cargando ? '#999' : esPrimario ? '#C8FF57' : '#888', letterSpacing: '0.03em' }}>
+                      style={{ flex: esPrimario ? 1 : 0, padding: '5px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, cursor: cargando ? 'default' : 'pointer', border: esPrimario ? 'none' : `0.5px solid rgba(13,13,13,0.15)`, background: cargando ? '#D0D0CC' : esPrimario ? '#0D0D0D' : '#C8C8C4', color: cargando ? '#888888' : esPrimario ? '#C8FF57' : '#555555', letterSpacing: '0.03em' }}>
                       {cargando ? '...' : accion}
                     </button>
                   );
@@ -169,13 +168,13 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
       {/* Proximos vencimientos */}
       {proxVencimientos.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Proximos vencimientos</div>
+          <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Proximos vencimientos</div>
           {proxVencimientos.map(t => {
             const f = formatFecha(t.fecha_vencimiento);
             return (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid #F0F0EA' }}>
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: `0.5px solid rgba(13,13,13,0.15)` }}>
                 <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, marginRight: 8, lineHeight: 1.3 }}>{t.titulo}</div>
-                {f && <div style={{ fontSize: 10, color: f.vencida ? '#C62828' : f.urgente ? '#B8860B' : '#888', flexShrink: 0, fontWeight: f.vencida || f.urgente ? 600 : 400 }}>{f.vencida ? '⚠ ' : ''}{f.texto}</div>}
+                {f && <div style={{ fontSize: 10, color: f.vencida ? '#C62828' : f.urgente ? '#B8860B' : '#555555', flexShrink: 0, fontWeight: f.vencida || f.urgente ? 600 : 400 }}>{f.vencida ? '⚠ ' : ''}{f.texto}</div>}
               </div>
             );
           })}
@@ -347,7 +346,7 @@ export default function Page() {
   // =============================================
   if (paso < 4) {
     return (
-      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#F5F5F0' }}>
+      <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#C8C8C4' }}>
         <style>{`@keyframes pulso{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes girar{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
         <div style={{ background: '#0D0D0D', color: '#F0EDE6', padding: '0 16px', display: 'flex', alignItems: 'center', minHeight: 52, flexShrink: 0 }}>
@@ -373,26 +372,26 @@ export default function Page() {
         </div>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: '0.5px solid #E0E0DA' }}>
+          <div style={{ background: '#E8E8E4', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: `0.5px solid rgba(13,13,13,0.15)` }}>
             <div style={{ display: 'flex', gap: 6, marginBottom: '1.75rem' }}>
               {['Empresa', 'Puesto', 'Acceso'].map((label, i) => (
                 <div key={i} style={{ flex: 1 }}>
-                  <div style={{ height: 3, borderRadius: 2, marginBottom: 6, background: paso > i + 1 ? '#C8FF57' : paso === i + 1 ? '#0D0D0D' : '#E0E0DA' }} />
-                  <div style={{ fontSize: 11, color: paso === i + 1 ? '#0D0D0D' : '#999', textAlign: 'center' }}>{label}</div>
+                  <div style={{ height: 3, borderRadius: 2, marginBottom: 6, background: paso > i + 1 ? '#C8FF57' : paso === i + 1 ? '#0D0D0D' : '#D0D0CC' }} />
+                  <div style={{ fontSize: 11, color: paso === i + 1 ? '#0D0D0D' : '#888888', textAlign: 'center' }}>{label}</div>
                 </div>
               ))}
             </div>
-            {error && <div style={{ background: '#FFF0F0', border: '0.5px solid #FFCCCC', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#C00', marginBottom: 16 }}>{error}</div>}
+            {error && <div style={{ background: '#FDECEA', border: '0.5px solid #EF9A9A', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#C62828', marginBottom: 16 }}>{error}</div>}
 
             {paso === 1 && (
               <>
                 <h2 style={{ fontSize: 17, fontWeight: 500, marginBottom: 4, color: '#0D0D0D' }}>Selecciona tu empresa</h2>
-                <p style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>En que empresa trabajas?</p>
+                <p style={{ fontSize: 13, color: '#555555', marginBottom: 16 }}>En que empresa trabajas?</p>
                 {cargandoLista ? <SkeletonLista cantidad={3} /> : empresas.map(emp => (
                   <button key={emp.id} onClick={() => elegirEmpresa(emp.id, emp.nombre)}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8, border: '0.5px solid #E0E0DA', borderRadius: 10, background: '#fff', cursor: 'pointer', fontSize: 14, color: '#0D0D0D', transition: 'border-color 0.15s' }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8, border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, background: '#C8C8C4', cursor: 'pointer', fontSize: 14, color: '#0D0D0D', transition: 'border-color 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(13,13,13,0.15)'}
                   >{emp.nombre}</button>
                 ))}
               </>
@@ -400,17 +399,17 @@ export default function Page() {
             {paso === 2 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <button onClick={() => setPaso(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', padding: 0, lineHeight: 1 }}>←</button>
+                  <button onClick={() => setPaso(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
                   <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Selecciona tu puesto</h2>
                 </div>
-                <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginLeft: 28 }}>{empresaNombre}</p>
+                <p style={{ fontSize: 13, color: '#555555', marginBottom: 16, marginLeft: 28 }}>{empresaNombre}</p>
                 {cargandoLista ? <SkeletonLista cantidad={4} /> : puestos.length === 0 ? (
-                  <p style={{ fontSize: 14, color: '#aaa' }}>No hay puestos cargados para esta empresa.</p>
+                  <p style={{ fontSize: 14, color: '#888888' }}>No hay puestos cargados para esta empresa.</p>
                 ) : puestos.map(p => (
                   <button key={p.id} onClick={() => elegirPuesto(p.id, p.nombre)}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8, border: '0.5px solid #E0E0DA', borderRadius: 10, background: '#fff', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8, border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, background: '#C8C8C4', cursor: 'pointer', transition: 'border-color 0.15s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = '#0D0D0D'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = '#E0E0DA'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(13,13,13,0.15)'}
                   ><div style={{ fontSize: 14, fontWeight: 500, color: '#0D0D0D' }}>{p.nombre}</div></button>
                 ))}
               </>
@@ -418,16 +417,16 @@ export default function Page() {
             {paso === 3 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <button onClick={() => setPaso(2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', padding: 0, lineHeight: 1 }}>←</button>
+                  <button onClick={() => setPaso(2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
                   <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Como te llamas?</h2>
                 </div>
-                <p style={{ fontSize: 13, color: '#888', marginBottom: 20, marginLeft: 28 }}>{puestoNombre} · {empresaNombre}</p>
+                <p style={{ fontSize: 13, color: '#555555', marginBottom: 20, marginLeft: 28 }}>{puestoNombre} · {empresaNombre}</p>
                 <form onSubmit={confirmarNombre}>
                   <input type="text" value={nombreEmpleado} onChange={e => setNombreEmpleado(e.target.value)} placeholder="Tu nombre completo" autoFocus disabled={cargando}
-                    style={{ width: '100%', padding: '11px 14px', border: '0.5px solid #E0E0DA', borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', color: '#0D0D0D' }} />
+                    style={{ width: '100%', padding: '11px 14px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', color: '#0D0D0D', background: '#C8C8C4' }} />
                   <button type="submit" disabled={cargando || !nombreEmpleado.trim()}
-                    style={{ width: '100%', padding: '11px 0', background: cargando || !nombreEmpleado.trim() ? '#E0E0DA' : '#0D0D0D', color: cargando || !nombreEmpleado.trim() ? '#999' : '#C8FF57', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-                    {cargando ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #999', borderTopColor: 'transparent', display: 'inline-block', animation: 'girar 0.7s linear infinite' }} />Ingresando...</span> : 'Ingresar al puesto →'}
+                    style={{ width: '100%', padding: '11px 0', background: cargando || !nombreEmpleado.trim() ? '#D0D0CC' : '#0D0D0D', color: cargando || !nombreEmpleado.trim() ? '#888888' : '#C8FF57', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                    {cargando ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #888888', borderTopColor: 'transparent', display: 'inline-block', animation: 'girar 0.7s linear infinite' }} />Ingresando...</span> : 'Ingresar al puesto →'}
                   </button>
                 </form>
               </>
@@ -442,7 +441,7 @@ export default function Page() {
   // UI — CHAT (paso 4) — layout dos columnas
   // =============================================
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#F5F5F0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#C8C8C4' }}>
       <style>{`
         @keyframes bote { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-5px);opacity:1} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
@@ -503,19 +502,18 @@ export default function Page() {
       </div>
 
       {/* Titulo del sector */}
-      <div style={{ background: '#ECECEA', borderBottom: '0.5px solid #E0E0DA', padding: '8px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#B8B8B4', borderBottom: `0.5px solid rgba(13,13,13,0.15)`, padding: '8px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <span style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D' }}>{puestoNombre}</span>
-          <span style={{ fontSize: 11, color: '#999', marginLeft: 10 }}>{nombreEmpleado} · {empresaNombre}</span>
+          <span style={{ fontSize: 11, color: '#555555', marginLeft: 10 }}>{nombreEmpleado} · {empresaNombre}</span>
         </div>
-
       </div>
 
       {/* Layout dos columnas */}
       <div className="layout-cols" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
         {/* Columna izquierda — contexto del puesto */}
-        <div className="col-contexto" style={{ width: 280, flexShrink: 0, borderRight: '0.5px solid #E0E0DA', background: '#FAFAF8', overflow: 'hidden' }}>
+        <div className="col-contexto" style={{ width: 280, flexShrink: 0, borderRight: `0.5px solid rgba(13,13,13,0.15)`, background: '#C8C8C4', overflow: 'hidden' }}>
           <PanelContexto
             tareasPuesto={tareasPuesto}
             puestoNombre={puestoNombre}
@@ -529,7 +527,7 @@ export default function Page() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.25rem' }}>
             {mensajes.length === 0 && (
-              <div style={{ textAlign: 'center', color: '#aaa', fontSize: 14, marginTop: '4rem', lineHeight: 1.8 }}>
+              <div style={{ textAlign: 'center', color: '#888888', fontSize: 14, marginTop: '4rem', lineHeight: 1.8 }}>
                 Hola <strong style={{ color: '#0D0D0D' }}>{nombreEmpleado}</strong>, soy la inteligencia<br />
                 del puesto <strong style={{ color: '#0D0D0D' }}>{puestoNombre}</strong>.<br />
                 En que trabajamos hoy?
@@ -537,55 +535,55 @@ export default function Page() {
             )}
             {mensajes.map((m, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: m.rol === 'usuario' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-                <div style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', fontSize: 14, lineHeight: 1.65, background: m.rol === 'usuario' ? '#0D0D0D' : '#fff', color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D', border: m.rol === 'kore' ? '0.5px solid #E0E0DA' : 'none', whiteSpace: 'pre-wrap' }}>
+                <div style={{ maxWidth: '80%', padding: '10px 14px', borderRadius: m.rol === 'usuario' ? '12px 12px 4px 12px' : '12px 12px 12px 4px', fontSize: 14, lineHeight: 1.65, background: m.rol === 'usuario' ? '#0D0D0D' : '#E8E8E4', color: m.rol === 'usuario' ? '#F0EDE6' : '#0D0D0D', border: m.rol === 'kore' ? `0.5px solid rgba(13,13,13,0.15)` : 'none', whiteSpace: 'pre-wrap' }}>
                   {m.texto}
                 </div>
               </div>
             ))}
             {eventoSugerido && (
-  <div style={{ display: 'flex', gap: 8, padding: '8px 0', alignItems: 'center', flexWrap: 'wrap' }}>
-    <div style={{ fontSize: 13, color: '#0D0D0D', flex: 1 }}>
-      Agendar: <strong>{eventoSugerido.titulo}</strong> · {eventoSugerido.fecha}{eventoSugerido.hora_inicio ? ` · ${eventoSugerido.hora_inicio}` : ''}
-    </div>
-    <button onClick={async () => {
-      try {
-        await fetch(`${API}/eventos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, ...eventoSugerido }) });
-        setMensajes(prev => [...prev, { rol: 'kore', texto: `✓ Evento "${eventoSugerido.titulo}" agendado para el ${eventoSugerido.fecha}.` }]);
-        setEventoSugerido(null);
-      } catch { setError('Error al crear evento.'); }
-    }} style={{ padding: '7px 16px', borderRadius: 10, border: 'none', background: '#0D0D0D', color: '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-      Agendar
-    </button>
-    <button onClick={() => setEventoSugerido(null)} style={{ padding: '7px 16px', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
-  </div>
-)}
+              <div style={{ display: 'flex', gap: 8, padding: '8px 0', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 13, color: '#0D0D0D', flex: 1 }}>
+                  Agendar: <strong>{eventoSugerido.titulo}</strong> · {eventoSugerido.fecha}{eventoSugerido.hora_inicio ? ` · ${eventoSugerido.hora_inicio}` : ''}
+                </div>
+                <button onClick={async () => {
+                  try {
+                    await fetch(`${API}/eventos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, ...eventoSugerido }) });
+                    setMensajes(prev => [...prev, { rol: 'kore', texto: `✓ Evento "${eventoSugerido.titulo}" agendado para el ${eventoSugerido.fecha}.` }]);
+                    setEventoSugerido(null);
+                  } catch { setError('Error al crear evento.'); }
+                }} style={{ padding: '7px 16px', borderRadius: 10, border: 'none', background: '#0D0D0D', color: '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  Agendar
+                </button>
+                <button onClick={() => setEventoSugerido(null)} style={{ padding: '7px 16px', borderRadius: 10, border: `0.5px solid rgba(13,13,13,0.15)`, background: '#E8E8E4', color: '#555555', fontSize: 13, cursor: 'pointer' }}>Cancelar</button>
+              </div>
+            )}
 
             {tareasPendientes && (
               <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
-                <button onClick={aprobarAsignaciones} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: aprobando ? '#E0E0DA' : '#0D0D0D', color: aprobando ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: aprobando ? 'default' : 'pointer' }}>
+                <button onClick={aprobarAsignaciones} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: aprobando ? '#D0D0CC' : '#0D0D0D', color: aprobando ? '#888888' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: aprobando ? 'default' : 'pointer' }}>
                   {aprobando ? 'Asignando...' : `Aprobar ${tareasPendientes.tareas.length} tarea${tareasPendientes.tareas.length !== 1 ? 's' : ''}`}
                 </button>
-                <button onClick={() => setTareasPendientes(null)} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>Modificar</button>
+                <button onClick={() => setTareasPendientes(null)} disabled={aprobando} style={{ padding: '9px 18px', borderRadius: 10, border: `0.5px solid rgba(13,13,13,0.15)`, background: '#E8E8E4', color: '#555555', fontSize: 13, cursor: 'pointer' }}>Modificar</button>
               </div>
             )}
 
             {cargando && (
               <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
-                <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#fff', border: '0.5px solid #E0E0DA', display: 'flex', gap: 5, alignItems: 'center' }}>
+                <div style={{ padding: '12px 16px', borderRadius: '12px 12px 12px 4px', background: '#E8E8E4', border: `0.5px solid rgba(13,13,13,0.15)`, display: 'flex', gap: 5, alignItems: 'center' }}>
                   {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#C8FF57', animation: 'bote 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
                 </div>
               </div>
             )}
-            {error && <p style={{ color: '#C00', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>{error}</p>}
+            {error && <p style={{ color: '#C62828', fontSize: 13, textAlign: 'center', margin: '8px 0' }}>{error}</p>}
             <div ref={bottomRef} />
           </div>
 
           {/* Input */}
-          <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#fff', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8, flexShrink: 0 }}>
+          <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#E8E8E4', borderTop: `0.5px solid rgba(13,13,13,0.15)`, display: 'flex', gap: 8, flexShrink: 0 }}>
             <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribi tu mensaje..." disabled={cargando}
-              style={{ flex: 1, padding: '10px 14px', border: '0.5px solid #E0E0DA', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#fff' }} />
+              style={{ flex: 1, padding: '10px 14px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#C8C8C4' }} />
             <button type="submit" disabled={cargando || !input.trim()}
-              style={{ padding: '10px 18px', background: cargando || !input.trim() ? '#E0E0DA' : '#0D0D0D', color: cargando || !input.trim() ? '#999' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
+              style={{ padding: '10px 18px', background: cargando || !input.trim() ? '#D0D0CC' : '#0D0D0D', color: cargando || !input.trim() ? '#888888' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
           </form>
         </div>
       </div>
@@ -594,18 +592,18 @@ export default function Page() {
       {panelTareasAbierto && (
         <>
           <div onClick={() => setPanelTareasAbierto(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
-          <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#fff', borderLeft: '0.5px solid #E0E0DA', zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.1)', animation: 'slideIn 0.2s ease-out' }}>
-            <div style={{ padding: '16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0 }}>
+          <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#E8E8E4', borderLeft: `0.5px solid rgba(13,13,13,0.15)`, zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.15)', animation: 'slideIn 0.2s ease-out' }}>
+            <div style={{ padding: '16px', borderBottom: `0.5px solid rgba(13,13,13,0.15)`, flexShrink: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>Tareas {tareasPuesto.length > 0 && <span style={{ background: '#F5F5F0', color: '#666', borderRadius: 20, padding: '1px 8px', fontSize: 11, marginLeft: 8, border: '0.5px solid #E0E0DA' }}>{tareasPuesto.length}</span>}</div>
-                <button onClick={() => setPanelTareasAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>Tareas {tareasPuesto.length > 0 && <span style={{ background: '#C8C8C4', color: '#555555', borderRadius: 20, padding: '1px 8px', fontSize: 11, marginLeft: 8, border: `0.5px solid rgba(13,13,13,0.15)` }}>{tareasPuesto.length}</span>}</div>
+                <button onClick={() => setPanelTareasAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', lineHeight: 1, padding: 0 }}>×</button>
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {['todas', 'pendiente', 'en progreso', 'bloqueada', 'completada'].map(est => {
                   const count = est === 'todas' ? tareasPuesto.length : tareasPuesto.filter(t => t.estado === est).length;
                   const activo = filtroEstado === est;
                   return (
-                    <button key={est} onClick={() => setFiltroEstado(est)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer', border: activo ? '0.5px solid #0D0D0D' : '0.5px solid #E0E0DA', background: activo ? '#0D0D0D' : '#F5F5F0', color: activo ? '#F0EDE6' : '#666', fontWeight: activo ? 600 : 400 }}>
+                    <button key={est} onClick={() => setFiltroEstado(est)} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, cursor: 'pointer', border: activo ? '0.5px solid #0D0D0D' : `0.5px solid rgba(13,13,13,0.15)`, background: activo ? '#0D0D0D' : '#C8C8C4', color: activo ? '#F0EDE6' : '#555555', fontWeight: activo ? 600 : 400 }}>
                       {est === 'todas' ? 'Todas' : ESTADO_CONFIG[est]?.label || est} {count > 0 && `(${count})`}
                     </button>
                   );
@@ -614,17 +612,17 @@ export default function Page() {
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
               {tareasParaPanel.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>{filtroEstado === 'todas' ? 'Sin tareas asignadas' : `Sin tareas ${ESTADO_CONFIG[filtroEstado]?.label?.toLowerCase() || filtroEstado}`}</p>
+                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 32 }}>{filtroEstado === 'todas' ? 'Sin tareas asignadas' : `Sin tareas ${ESTADO_CONFIG[filtroEstado]?.label?.toLowerCase() || filtroEstado}`}</p>
               ) : tareasParaPanel.map(t => {
                 const fecha = formatFecha(t.fecha_vencimiento);
                 return (
-                  <div key={t.id} style={{ padding: '12px', borderRadius: 10, border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : '#E0E0DA'}`, marginBottom: 8, background: t.estado === 'completada' ? '#FAFAFA' : '#fff', opacity: t.estado === 'completada' ? 0.7 : 1 }}>
+                  <div key={t.id} style={{ padding: '12px', borderRadius: 10, border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : 'rgba(13,13,13,0.15)'}`, marginBottom: 8, background: t.estado === 'completada' ? '#D8D8D4' : '#E8E8E4', opacity: t.estado === 'completada' ? 0.7 : 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D', marginBottom: 6, textDecoration: t.estado === 'completada' ? 'line-through' : 'none' }}>{t.titulo}</div>
-                    {t.descripcion && <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5, marginBottom: 8 }}>{t.descripcion}</div>}
+                    {t.descripcion && <div style={{ fontSize: 12, color: '#555555', lineHeight: 1.5, marginBottom: 8 }}>{t.descripcion}</div>}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <BadgeEstado estado={t.estado} />
-                      {t.prioridad && <span style={{ fontSize: 10, color: PRIORIDAD_CONFIG[t.prioridad]?.color || '#666', fontWeight: 500 }}>● {PRIORIDAD_CONFIG[t.prioridad]?.label || t.prioridad}</span>}
-                      {fecha && <span style={{ fontSize: 10, color: fecha.vencida ? '#C62828' : '#888', marginLeft: 'auto' }}>{fecha.vencida ? '⚠ ' : ''}{fecha.texto}</span>}
+                      {t.prioridad && <span style={{ fontSize: 10, color: PRIORIDAD_CONFIG[t.prioridad]?.color || '#555555', fontWeight: 500 }}>● {PRIORIDAD_CONFIG[t.prioridad]?.label || t.prioridad}</span>}
+                      {fecha && <span style={{ fontSize: 10, color: fecha.vencida ? '#C62828' : '#555555', marginLeft: 'auto' }}>{fecha.vencida ? '⚠ ' : ''}{fecha.texto}</span>}
                     </div>
                     {TRANSICIONES[t.estado]?.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
@@ -633,7 +631,7 @@ export default function Page() {
                           const cargandoBtn = actualizandoTarea === t.id;
                           return (
                             <button key={accion} onClick={() => cambiarEstadoTarea(t.id, nuevoEstado)} disabled={cargandoBtn}
-                              style={{ flex: esPrimario ? 1 : 0, padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: cargandoBtn ? 'default' : 'pointer', border: esPrimario ? 'none' : '0.5px solid #E0E0DA', background: cargandoBtn ? '#E0E0DA' : esPrimario ? '#0D0D0D' : '#fff', color: cargandoBtn ? '#999' : esPrimario ? '#C8FF57' : '#888' }}>
+                              style={{ flex: esPrimario ? 1 : 0, padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: cargandoBtn ? 'default' : 'pointer', border: esPrimario ? 'none' : `0.5px solid rgba(13,13,13,0.15)`, background: cargandoBtn ? '#D0D0CC' : esPrimario ? '#0D0D0D' : '#C8C8C4', color: cargandoBtn ? '#888888' : esPrimario ? '#C8FF57' : '#555555' }}>
                               {cargandoBtn ? '...' : accion}
                             </button>
                           );
@@ -644,8 +642,8 @@ export default function Page() {
                 );
               })}
             </div>
-            <div style={{ padding: '12px 16px', borderTop: '0.5px solid #E0E0DA', flexShrink: 0 }}>
-              <button onClick={() => cargarTareasPuesto(puestoId)} style={{ width: '100%', padding: '9px 0', borderRadius: 10, border: '0.5px solid #E0E0DA', background: '#F5F5F0', color: '#666', fontSize: 12, cursor: 'pointer' }}>Actualizar</button>
+            <div style={{ padding: '12px 16px', borderTop: `0.5px solid rgba(13,13,13,0.15)`, flexShrink: 0 }}>
+              <button onClick={() => cargarTareasPuesto(puestoId)} style={{ width: '100%', padding: '9px 0', borderRadius: 10, border: `0.5px solid rgba(13,13,13,0.15)`, background: '#C8C8C4', color: '#555555', fontSize: 12, cursor: 'pointer' }}>Actualizar</button>
             </div>
           </div>
         </>
@@ -663,48 +661,48 @@ export default function Page() {
         return (
           <>
             <div onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
-            <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#fff', borderLeft: '0.5px solid #E0E0DA', zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.1)', animation: 'slideIn 0.2s ease-out' }}>
-              <div style={{ padding: '14px 16px', borderBottom: '0.5px solid #E0E0DA', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                {hiloAbierto && <button onClick={() => setHiloAbierto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#888', padding: 0, lineHeight: 1 }}>←</button>}
+            <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#E8E8E4', borderLeft: `0.5px solid rgba(13,13,13,0.15)`, zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.15)', animation: 'slideIn 0.2s ease-out' }}>
+              <div style={{ padding: '14px 16px', borderBottom: `0.5px solid rgba(13,13,13,0.15)`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                {hiloAbierto && <button onClick={() => setHiloAbierto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>}
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D', flex: 1 }}>{hiloAbierto ? (puestos.find(p => p.id === hiloAbierto)?.nombre || 'Mensajes') : 'Mensajes'}</div>
-                {!hiloAbierto && <button onClick={() => { setHiloAbierto('nuevo'); setPuestoDestino(''); setTextoMensaje(''); }} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: '0.5px solid #E0E0DA', background: '#F5F5F0', color: '#555', cursor: 'pointer' }}>+ Nuevo</button>}
-                <button onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#888', lineHeight: 1, padding: 0 }}>×</button>
+                {!hiloAbierto && <button onClick={() => { setHiloAbierto('nuevo'); setPuestoDestino(''); setTextoMensaje(''); }} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: `0.5px solid rgba(13,13,13,0.15)`, background: '#C8C8C4', color: '#555555', cursor: 'pointer' }}>+ Nuevo</button>}
+                <button onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', lineHeight: 1, padding: 0 }}>×</button>
               </div>
               {!hiloAbierto && (
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                  {conversaciones.length === 0 ? <p style={{ fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 32 }}>Sin conversaciones todavia</p>
+                  {conversaciones.length === 0 ? <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 32 }}>Sin conversaciones todavia</p>
                   : conversaciones.map(c => (
                     <div key={c.puesto.id} onClick={async () => {
                       setHiloAbierto(c.puesto.id);
                       if (c.noLeidos > 0) { const noLeidos = c.msgs.filter(m => m.puesto_origen_id === c.puesto.id && !m.leido); await Promise.all(noLeidos.map(m => fetch(`${API}/mensajes/${m.id}/leido`, { method: 'PUT' }))); cargarMensajesPuesto(puestoId); }
-                    }} style={{ padding: '14px 16px', borderBottom: '0.5px solid #F0F0EA', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: '#fff' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#F9F9F7'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                    }} style={{ padding: '14px 16px', borderBottom: `0.5px solid rgba(13,13,13,0.1)`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: '#E8E8E4' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#D8D8D4'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#E8E8E4'}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D' }}>{c.puesto.nombre}</div>
                           {c.noLeidos > 0 && <div style={{ background: '#E53935', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '1px 6px', minWidth: 16, textAlign: 'center' }}>{c.noLeidos}</div>}
                         </div>
-                        <div style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.ultimo?.contenido || ''}</div>
+                        <div style={{ fontSize: 12, color: '#555555', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.ultimo?.contenido || ''}</div>
                       </div>
-                      <div style={{ fontSize: 10, color: '#ccc', flexShrink: 0 }}>{c.ultimo ? new Date(c.ultimo.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : ''}</div>
+                      <div style={{ fontSize: 10, color: '#888888', flexShrink: 0 }}>{c.ultimo ? new Date(c.ultimo.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }) : ''}</div>
                     </div>
                   ))}
                 </div>
               )}
               {hiloAbierto === 'nuevo' && (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px' }}>
-                  <select value={puestoDestino} onChange={e => setPuestoDestino(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', marginBottom: 10 }}>
+                  <select value={puestoDestino} onChange={e => setPuestoDestino(e.target.value)} style={{ width: '100%', padding: '8px 10px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#C8C8C4', marginBottom: 10 }}>
                     <option value="">Seleccionar puesto...</option>
                     {puestos.filter(p => p.id !== puestoId).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                   </select>
-                  <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Escribi tu mensaje..." rows={4} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Escribi tu mensaje..." rows={4} style={{ width: '100%', padding: '8px 10px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#C8C8C4', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   <button disabled={!puestoDestino || !textoMensaje.trim() || enviandoMensaje} onClick={async () => {
                     if (!puestoDestino || !textoMensaje.trim()) return;
                     setEnviandoMensaje(true);
                     try { await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); const destId = puestoDestino; setTextoMensaje(''); setPuestoDestino(''); await cargarMensajesPuesto(puestoId); setHiloAbierto(destId); } catch {} finally { setEnviandoMensaje(false); }
-                  }} style={{ marginTop: 10, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  }} style={{ marginTop: 10, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#D0D0CC' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#888888' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                     {enviandoMensaje ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>
@@ -716,19 +714,19 @@ export default function Page() {
                       const esMio = m.puesto_origen_id === puestoId;
                       return (
                         <div key={m.id} style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', alignItems: esMio ? 'flex-end' : 'flex-start' }}>
-                          <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: esMio ? '10px 10px 2px 10px' : '10px 10px 10px 2px', fontSize: 13, lineHeight: 1.5, background: esMio ? '#0D0D0D' : '#F5F5F0', color: esMio ? '#F0EDE6' : '#0D0D0D', border: esMio ? 'none' : '0.5px solid #E0E0DA' }}>{m.contenido}</div>
-                          <div style={{ fontSize: 10, color: '#ccc', marginTop: 2 }}>{new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                          <div style={{ maxWidth: '85%', padding: '8px 12px', borderRadius: esMio ? '10px 10px 2px 10px' : '10px 10px 10px 2px', fontSize: 13, lineHeight: 1.5, background: esMio ? '#0D0D0D' : '#C8C8C4', color: esMio ? '#F0EDE6' : '#0D0D0D', border: esMio ? 'none' : `0.5px solid rgba(13,13,13,0.15)` }}>{m.contenido}</div>
+                          <div style={{ fontSize: 10, color: '#888888', marginTop: 2 }}>{new Date(m.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       );
                     })}
                   </div>
-                  <div style={{ padding: '12px', borderTop: '0.5px solid #E0E0DA', display: 'flex', gap: 8 }}>
-                    <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Responder..." rows={2} style={{ flex: 1, padding: '8px 10px', border: '0.5px solid #E0E0DA', borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#fff', resize: 'none', fontFamily: 'inherit' }} />
+                  <div style={{ padding: '12px', borderTop: `0.5px solid rgba(13,13,13,0.15)`, display: 'flex', gap: 8 }}>
+                    <textarea value={textoMensaje} onChange={e => setTextoMensaje(e.target.value)} placeholder="Responder..." rows={2} style={{ flex: 1, padding: '8px 10px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 8, fontSize: 13, color: '#0D0D0D', background: '#C8C8C4', resize: 'none', fontFamily: 'inherit' }} />
                     <button disabled={!textoMensaje.trim() || enviandoMensaje} onClick={async () => {
                       if (!textoMensaje.trim()) return;
                       setEnviandoMensaje(true);
                       try { await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: hiloAbierto, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); setTextoMensaje(''); await cargarMensajesPuesto(puestoId); } catch {} finally { setEnviandoMensaje(false); }
-                    }} style={{ padding: '0 14px', borderRadius: 8, border: 'none', background: !textoMensaje.trim() ? '#E0E0DA' : '#0D0D0D', color: !textoMensaje.trim() ? '#999' : '#C8FF57', fontSize: 16, cursor: 'pointer' }}>→</button>
+                    }} style={{ padding: '0 14px', borderRadius: 8, border: 'none', background: !textoMensaje.trim() ? '#D0D0CC' : '#0D0D0D', color: !textoMensaje.trim() ? '#888888' : '#C8FF57', fontSize: 16, cursor: 'pointer' }}>→</button>
                   </div>
                 </div>
               )}
