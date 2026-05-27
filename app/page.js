@@ -579,12 +579,12 @@ export default function Page() {
           </div>
 
           {/* Input */}
-          <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#E8E8E4', borderTop: `0.5px solid rgba(13,13,13,0.15)`, display: 'flex', gap: 8, flexShrink: 0 }}>
-            <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribi tu mensaje..." disabled={cargando}
-              style={{ flex: 1, padding: '10px 14px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, fontSize: 14, outline: 'none', color: '#0D0D0D', background: '#C8C8C4' }} />
-            <button type="submit" disabled={cargando || !input.trim()}
-              style={{ padding: '10px 18px', background: cargando || !input.trim() ? '#D0D0CC' : '#0D0D0D', color: cargando || !input.trim() ? '#888888' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
-          </form>
+          <form onSubmit={enviarMensaje} style={{ padding: '12px 16px', background: '#C8C8C4', borderTop: `0.5px solid rgba(13,13,13,0.15)`, display: 'flex', gap: 8, flexShrink: 0 }}>
+  <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribi tu mensaje..." disabled={cargando}
+    style={{ flex: 1, padding: '10px 14px', border: 'none', borderRadius: 10, fontSize: 14, outline: 'none', color: '#F0EDE6', background: '#0D0D0D' }} />
+  <button type="submit" disabled={cargando || !input.trim()}
+    style={{ padding: '10px 18px', background: '#0D0D0D', color: cargando || !input.trim() ? '#444' : '#C8FF57', border: 'none', borderRadius: 10, fontWeight: 500, cursor: 'pointer', fontSize: 16 }}>→</button>
+</form>
         </div>
       </div>
 
