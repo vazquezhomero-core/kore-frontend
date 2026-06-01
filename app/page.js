@@ -274,6 +274,15 @@ export default function Page() {
   async function cargarMensajesPuesto(id) {
     try { const res = await fetch(`${API}/mensajes/${id}`); const data = await res.json(); setMensajesPuesto(Array.isArray(data) ? data : []); } catch { setMensajesPuesto([]); }
   }
+  
+
+  useEffect(() => {
+    if (!puestoId || paso !== 4) return;
+    const intervalo = setInterval(() => {
+      cargarMensajesPuesto(puestoId);
+    }, 30000);
+    return () => clearInterval(intervalo);
+  }, [puestoId, paso]);
 
   async function cargarTareasPuesto(id) {
     try { const res = await fetch(`${API}/puestos/${id}/tareas`); const data = await res.json(); setTareasPuesto(Array.isArray(data) ? data : []); } catch { setTareasPuesto([]); }
@@ -661,7 +670,7 @@ export default function Page() {
         return (
           <>
             <div onClick={() => { setPanelMensajesAbierto(false); setHiloAbierto(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 199 }} />
-            <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#E8E8E4', borderLeft: `0.5px solid rgba(13,13,13,0.15)`, zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.15)', animation: 'slideIn 0.2s ease-out' }}>
+            <div style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100dvh', background: '#E8E8E4', borderLeft: `0.5px solid rgba(13,13,13,0.15)`, zIndex: 200, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.15)', animation: 'slideIn 0.2s ease-out', overflow: 'hidden' }}>
               <div style={{ padding: '14px 16px', borderBottom: `0.5px solid rgba(13,13,13,0.15)`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                 {hiloAbierto && <button onClick={() => setHiloAbierto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>}
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#0D0D0D', flex: 1 }}>{hiloAbierto ? (puestos.find(p => p.id === hiloAbierto)?.nombre || 'Mensajes') : 'Mensajes'}</div>
@@ -708,7 +717,7 @@ export default function Page() {
                 </div>
               )}
               {hiloAbierto && hiloAbierto !== 'nuevo' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' , minHeight: 0}}>
                   <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
                     {(hiloActual?.msgs || []).map(m => {
                       const esMio = m.puesto_origen_id === puestoId;
