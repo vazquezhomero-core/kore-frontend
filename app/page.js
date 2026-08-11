@@ -8,8 +8,20 @@ function guardarSesion(datos) { try { localStorage.setItem(STORAGE_KEY, JSON.str
 function leerSesion() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; } }
 function limpiarSesion() { try { localStorage.removeItem(STORAGE_KEY); } catch {} }
 
-function esGerente(nombrePuesto) {
-  return nombrePuesto?.toLowerCase().includes('gerente');
+// Todo pedido a un endpoint protegido pasa por aca: agrega el token.
+// Si el backend responde 401 (token vencido o invalido), cierra la sesion
+// y vuelve a la pantalla de login.
+async function authFetch(url, opciones = {}) {
+  const sesion = leerSesion();
+  const headers = { ...(opciones.headers || {}) };
+  if (sesion?.token) headers['Authorization'] = 'Bearer ' + sesion.token;
+  const res = await fetch(url, { ...opciones, headers });
+  if (res.status === 401) {
+    limpiarSesion();
+    if (typeof window !== 'undefined') window.location.reload();
+    throw new Error('Sesion vencida');
+  }
+  return res;
 }
 
 function SkeletonLista({ cantidad = 3 }) {
@@ -186,6 +198,7 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
 }
 
 export default function Page() {
+  // Pasos: 1 empresa, 2 puesto, 3 clave (login), 4 nombre, 5 chat
   const [paso, setPaso] = useState(1);
   const [empresas, setEmpresas] = useState([]);
   const [puestos, setPuestos] = useState([]);
@@ -194,6 +207,9 @@ export default function Page() {
   const [empresaNombre, setEmpresaNombre] = useState('');
   const [puestoId, setPuestoId] = useState('');
   const [puestoNombre, setPuestoNombre] = useState('');
+  const [clave, setClave] = useState('');
+  const [token, setToken] = useState('');
+  const [rol, setRol] = useState('empleado');
   const [nombreEmpleado, setNombreEmpleado] = useState('');
   const [empleadoId, setEmpleadoId] = useState('');
   const [mensajes, setMensajes] = useState([]);
@@ -220,18 +236,30 @@ export default function Page() {
 
   useEffect(() => {
     const sesion = leerSesion();
-    if (sesion?.empleadoId && sesion?.puestoId && sesion?.empresaId) {
+    // Sesion completa: token + empleado ya registrado -> directo al chat
+    if (sesion?.token && sesion?.empleadoId && sesion?.puestoId && sesion?.empresaId) {
       setEmpresaId(sesion.empresaId); setEmpresaNombre(sesion.empresaNombre);
       setPuestoId(sesion.puestoId); setPuestoNombre(sesion.puestoNombre);
       setNombreEmpleado(sesion.nombreEmpleado); setEmpleadoId(sesion.empleadoId);
-      setPaso(4); cargarTareasPuesto(sesion.puestoId);
+      setToken(sesion.token); setRol(sesion.rol || 'empleado');
+      setPaso(5); cargarTareasPuesto(sesion.puestoId);
       return;
     }
+    // Sesion a medias: login hecho pero sin nombre -> al paso del nombre
+    if (sesion?.token && sesion?.puestoId && sesion?.empresaId) {
+      setEmpresaId(sesion.empresaId); setEmpresaNombre(sesion.empresaNombre);
+      setPuestoId(sesion.puestoId); setPuestoNombre(sesion.puestoNombre);
+      setToken(sesion.token); setRol(sesion.rol || 'empleado');
+      setPaso(4);
+      return;
+    }
+    // Sesion vieja sin token o sin sesion -> login desde cero
+    limpiarSesion();
     cargarEmpresas();
   }, []);
 
   useEffect(() => {
-    if (!empresaId || paso === 4) return;
+    if (!empresaId || paso >= 4) return;
     setCargandoLista(true); setPuestos([]);
     fetch(`${API}/empresas/${empresaId}/puestos`)
       .then(r => r.json()).then(data => setPuestos(Array.isArray(data) ? data : []))
@@ -255,29 +283,44 @@ export default function Page() {
   function elegirEmpresa(id, nombre) { setEmpresaId(id); setEmpresaNombre(nombre); setError(''); setPaso(2); }
   function elegirPuesto(id, nombre) { setPuestoId(id); setPuestoNombre(nombre); setError(''); setPaso(3); }
 
+  async function confirmarClave(e) {
+    e.preventDefault();
+    if (!clave.trim()) return;
+    setCargando(true); setError('');
+    try {
+      const res = await fetch(`${API}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ empresa_id: empresaId, puesto_id: puestoId, clave: clave.trim() }) });
+      const data = await res.json();
+      if (!res.ok || !data.token) throw new Error(data.error || 'Clave incorrecta.');
+      const rolRecibido = data.rol || 'empleado';
+      setToken(data.token); setRol(rolRecibido);
+      guardarSesion({ empresaId, empresaNombre, puestoId, puestoNombre, token: data.token, rol: rolRecibido });
+      setClave(''); setPaso(4);
+    } catch (err) { setError(err.message || 'Error al ingresar.'); }
+    finally { setCargando(false); }
+  }
+
   async function confirmarNombre(e) {
     e.preventDefault();
     if (!nombreEmpleado.trim()) return;
     setCargando(true); setError('');
     try {
       const emailUnico = `${nombreEmpleado.trim().toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@kore.demo`;
-      const res = await fetch(`${API}/empleados`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: nombreEmpleado.trim(), empresa_id: empresaId, email: emailUnico, fecha_ingreso: null }) });
+      const res = await authFetch(`${API}/empleados`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: nombreEmpleado.trim(), empresa_id: empresaId, email: emailUnico, fecha_ingreso: null }) });
       const data = await res.json();
-      if (!data.id) throw new Error('No se pudo crear el empleado.');
+      if (!data.id) throw new Error('No se pudo registrar el nombre.');
       setEmpleadoId(data.id);
-      guardarSesion({ empresaId, empresaNombre, puestoId, puestoNombre, nombreEmpleado: nombreEmpleado.trim(), empleadoId: data.id });
-      setPaso(4); cargarTareasPuesto(puestoId);
-    } catch (err) { setError('Error al registrar empleado: ' + err.message); }
+      guardarSesion({ empresaId, empresaNombre, puestoId, puestoNombre, token, rol, nombreEmpleado: nombreEmpleado.trim(), empleadoId: data.id });
+      setPaso(5); cargarTareasPuesto(puestoId);
+    } catch (err) { setError('Error al registrar nombre: ' + err.message); }
     finally { setCargando(false); }
   }
 
   async function cargarMensajesPuesto(id) {
-    try { const res = await fetch(`${API}/mensajes/${id}`); const data = await res.json(); setMensajesPuesto(Array.isArray(data) ? data : []); } catch { setMensajesPuesto([]); }
+    try { const res = await authFetch(`${API}/mensajes/${id}`); const data = await res.json(); setMensajesPuesto(Array.isArray(data) ? data : []); } catch { setMensajesPuesto([]); }
   }
-  
 
   useEffect(() => {
-    if (!puestoId || paso !== 4) return;
+    if (!puestoId || paso !== 5) return;
     const intervalo = setInterval(() => {
       cargarMensajesPuesto(puestoId);
     }, 30000);
@@ -285,13 +328,13 @@ export default function Page() {
   }, [puestoId, paso]);
 
   async function cargarTareasPuesto(id) {
-    try { const res = await fetch(`${API}/puestos/${id}/tareas`); const data = await res.json(); setTareasPuesto(Array.isArray(data) ? data : []); } catch { setTareasPuesto([]); }
+    try { const res = await authFetch(`${API}/puestos/${id}/tareas`); const data = await res.json(); setTareasPuesto(Array.isArray(data) ? data : []); } catch { setTareasPuesto([]); }
   }
 
   async function cambiarEstadoTarea(tareaId, nuevoEstado) {
     setActualizandoTarea(tareaId);
     try {
-      const res = await fetch(`${API}/tareas/${tareaId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: nuevoEstado }) });
+      const res = await authFetch(`${API}/tareas/${tareaId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: nuevoEstado }) });
       if (!res.ok) throw new Error();
       await cargarTareasPuesto(puestoId);
     } catch { setError('Error al cambiar estado de la tarea.'); }
@@ -301,6 +344,7 @@ export default function Page() {
   function cambiarPuesto() {
     limpiarSesion();
     setEmpresaId(''); setEmpresaNombre(''); setPuestoId(''); setPuestoNombre('');
+    setClave(''); setToken(''); setRol('empleado');
     setNombreEmpleado(''); setEmpleadoId(''); setMensajes([]); setError('');
     setMenuAbierto(false); setPaso(1); cargarEmpresas();
   }
@@ -312,7 +356,7 @@ export default function Page() {
     setMensajes(prev => [...prev, { rol: 'usuario', texto }]);
     setInput(''); setCargando(true); setError('');
     try {
-      const res = await fetch(`${API}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, mensaje: texto }) });
+      const res = await authFetch(`${API}/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, mensaje: texto }) });
       const data = await res.json();
       setMensajes(prev => [...prev, { rol: 'kore', texto: data.respuesta || data.error || 'Sin respuesta.' }]);
       if (data.tareas_sugeridas?.length > 0) setTareasPendientes({ tareas: data.tareas_sugeridas, puesto_origen_id: puestoId });
@@ -337,7 +381,7 @@ export default function Page() {
           }
         }
       }
-      const res = await fetch(`${API}/asignar-tareas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ empresa_id: empresaId, puesto_origen_id: tareasPendientes.puesto_origen_id, tareas: tareasResueltas }) });
+      const res = await authFetch(`${API}/asignar-tareas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ empresa_id: empresaId, puesto_origen_id: tareasPendientes.puesto_origen_id, tareas: tareasResueltas }) });
       const data = await res.json();
       const ok = data.resultados?.filter(r => r.ok).length || 0;
       setMensajes(prev => [...prev, { rol: 'kore', texto: `\u2713 ${ok} tarea${ok !== 1 ? 's' : ''} asignada${ok !== 1 ? 's' : ''} correctamente.` }]);
@@ -349,11 +393,12 @@ export default function Page() {
   const tareasParaPanel = ordenarTareas(filtroEstado === 'todas' ? tareasPuesto : tareasPuesto.filter(t => t.estado === filtroEstado));
   const contadorPendientes = tareasPuesto.filter(t => t.estado === 'pendiente' || t.estado === 'bloqueada').length;
   const noLeidosCount = mensajesPuesto.filter(m => m.puesto_origen_id !== puestoId && !m.leido).length;
+  const esAdmin = rol === 'administrador';
 
   // =============================================
-  // UI — SELECCION
+  // UI — SELECCION Y LOGIN (pasos 1 a 4)
   // =============================================
-  if (paso < 4) {
+  if (paso < 5) {
     return (
       <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: '#C8C8C4' }}>
         <style>{`@keyframes pulso{0%,100%{opacity:1}50%{opacity:0.4}} @keyframes girar{to{transform:rotate(360deg)}} @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -366,24 +411,12 @@ export default function Page() {
             </div>
             <span style={{ fontSize: 16, fontWeight: 300, letterSpacing: '0.16em' }}>KORE</span>
           </div>
-          <div ref={menuRef} style={{ position: 'relative' }}>
-            <button onClick={() => setMenuAbierto(v => !v)} style={{ width: 34, height: 34, borderRadius: 8, background: menuAbierto ? '#222' : 'none', border: '0.5px solid #333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IconoMenu />
-            </button>
-            {menuAbierto && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
-                <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} activo />
-                <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />
-                <MenuItem label="Agenda" href="/agenda" onClick={() => setMenuAbierto(false)} />
-              </div>
-            )}
-          </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
           <div style={{ background: '#E8E8E4', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 400, border: `0.5px solid rgba(13,13,13,0.15)` }}>
             <div style={{ display: 'flex', gap: 6, marginBottom: '1.75rem' }}>
-              {['Empresa', 'Puesto', 'Acceso'].map((label, i) => (
+              {['Empresa', 'Puesto', 'Clave', 'Nombre'].map((label, i) => (
                 <div key={i} style={{ flex: 1 }}>
                   <div style={{ height: 3, borderRadius: 2, marginBottom: 6, background: paso > i + 1 ? '#C8FF57' : paso === i + 1 ? '#0D0D0D' : '#D0D0CC' }} />
                   <div style={{ fontSize: 11, color: paso === i + 1 ? '#0D0D0D' : '#888888', textAlign: 'center' }}>{label}</div>
@@ -408,7 +441,7 @@ export default function Page() {
             {paso === 2 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <button onClick={() => setPaso(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
+                  <button onClick={() => { setError(''); setPaso(1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
                   <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Selecciona tu puesto</h2>
                 </div>
                 <p style={{ fontSize: 13, color: '#555555', marginBottom: 16, marginLeft: 28 }}>{empresaNombre}</p>
@@ -426,10 +459,27 @@ export default function Page() {
             {paso === 3 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <button onClick={() => setPaso(2)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
-                  <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Como te llamas?</h2>
+                  <button onClick={() => { setError(''); setClave(''); setPaso(2); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#555555', padding: 0, lineHeight: 1 }}>←</button>
+                  <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Clave del puesto</h2>
                 </div>
                 <p style={{ fontSize: 13, color: '#555555', marginBottom: 20, marginLeft: 28 }}>{puestoNombre} · {empresaNombre}</p>
+                <form onSubmit={confirmarClave}>
+                  <input type="password" value={clave} onChange={e => setClave(e.target.value)} placeholder="Ingresa la clave" autoFocus disabled={cargando} autoComplete="current-password"
+                    style={{ width: '100%', padding: '11px 14px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', color: '#0D0D0D', background: '#C8C8C4', letterSpacing: '0.1em' }} />
+                  <button type="submit" disabled={cargando || !clave.trim()}
+                    style={{ width: '100%', padding: '11px 0', background: cargando || !clave.trim() ? '#D0D0CC' : '#0D0D0D', color: cargando || !clave.trim() ? '#888888' : '#C8FF57', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                    {cargando ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #888888', borderTopColor: 'transparent', display: 'inline-block', animation: 'girar 0.7s linear infinite' }} />Verificando...</span> : 'Ingresar →'}
+                  </button>
+                </form>
+                <p style={{ fontSize: 11, color: '#888888', marginTop: 14, lineHeight: 1.6 }}>La clave la genera el administrador y esta asociada al puesto, no a la persona.</p>
+              </>
+            )}
+            {paso === 4 && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 500, color: '#0D0D0D' }}>Como te llamas?</h2>
+                </div>
+                <p style={{ fontSize: 13, color: '#555555', marginBottom: 20 }}>{puestoNombre} · {empresaNombre}</p>
                 <form onSubmit={confirmarNombre}>
                   <input type="text" value={nombreEmpleado} onChange={e => setNombreEmpleado(e.target.value)} placeholder="Tu nombre completo" autoFocus disabled={cargando}
                     style={{ width: '100%', padding: '11px 14px', border: `0.5px solid rgba(13,13,13,0.15)`, borderRadius: 10, fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', color: '#0D0D0D', background: '#C8C8C4' }} />
@@ -438,6 +488,7 @@ export default function Page() {
                     {cargando ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><span style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #888888', borderTopColor: 'transparent', display: 'inline-block', animation: 'girar 0.7s linear infinite' }} />Ingresando...</span> : 'Ingresar al puesto →'}
                   </button>
                 </form>
+                <p style={{ fontSize: 11, color: '#888888', marginTop: 14, lineHeight: 1.6 }}>Tu nombre se usa para el saludo y el registro de actividad.</p>
               </>
             )}
           </div>
@@ -447,7 +498,7 @@ export default function Page() {
   }
 
   // =============================================
-  // UI — CHAT (paso 4) — layout dos columnas
+  // UI — CHAT (paso 5) — layout dos columnas
   // =============================================
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#C8C8C4' }}>
@@ -497,13 +548,13 @@ export default function Page() {
             {menuAbierto && (
               <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#1A1A1A', border: '0.5px solid #333', borderRadius: 10, padding: '6px', minWidth: 200, zIndex: 100, boxShadow: '0 8px 24px rgba(0,0,0,0.4)', animation: 'fadeIn 0.15s ease-out' }}>
                 <MenuItem label="Vista empleado" href="/" onClick={() => setMenuAbierto(false)} activo />
-                {esGerente(puestoNombre) && <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />}
+                {esAdmin && <MenuItem label="Panel de gestion" href="/gestion" onClick={() => setMenuAbierto(false)} />}
                 <MenuItem label="Agenda" href="/agenda" onClick={() => setMenuAbierto(false)} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
                 <MenuItem label={contadorPendientes > 0 ? `Tareas (${contadorPendientes})` : 'Tareas'} onClick={() => { setMenuAbierto(false); setPanelTareasAbierto(true); setFiltroEstado('todas'); }} />
                 <MenuItem label="Mensajes" onClick={() => { setMenuAbierto(false); setPanelMensajesAbierto(true); setHiloAbierto(null); cargarMensajesPuesto(puestoId); }} />
                 <div style={{ height: '0.5px', background: '#333', margin: '4px 0' }} />
-                <MenuItem label="Cambiar puesto" onClick={cambiarPuesto} danger />
+                <MenuItem label="Cerrar sesion" onClick={cambiarPuesto} danger />
               </div>
             )}
           </div>
@@ -556,7 +607,7 @@ export default function Page() {
                 </div>
                 <button onClick={async () => {
                   try {
-                    await fetch(`${API}/eventos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, ...eventoSugerido }) });
+                    await authFetch(`${API}/eventos`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_id: puestoId, empleado_id: empleadoId, ...eventoSugerido }) });
                     setMensajes(prev => [...prev, { rol: 'kore', texto: `✓ Evento "${eventoSugerido.titulo}" agendado para el ${eventoSugerido.fecha}.` }]);
                     setEventoSugerido(null);
                   } catch { setError('Error al crear evento.'); }
@@ -683,7 +734,7 @@ export default function Page() {
                   : conversaciones.map(c => (
                     <div key={c.puesto.id} onClick={async () => {
                       setHiloAbierto(c.puesto.id);
-                      if (c.noLeidos > 0) { const noLeidos = c.msgs.filter(m => m.puesto_origen_id === c.puesto.id && !m.leido); await Promise.all(noLeidos.map(m => fetch(`${API}/mensajes/${m.id}/leido`, { method: 'PUT' }))); cargarMensajesPuesto(puestoId); }
+                      if (c.noLeidos > 0) { const noLeidos = c.msgs.filter(m => m.puesto_origen_id === c.puesto.id && !m.leido); await Promise.all(noLeidos.map(m => authFetch(`${API}/mensajes/${m.id}/leido`, { method: 'PUT' }))); cargarMensajesPuesto(puestoId); }
                     }} style={{ padding: '14px 16px', borderBottom: `0.5px solid rgba(13,13,13,0.1)`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, background: '#E8E8E4' }}
                       onMouseEnter={e => e.currentTarget.style.background = '#D8D8D4'}
                       onMouseLeave={e => e.currentTarget.style.background = '#E8E8E4'}
@@ -710,7 +761,7 @@ export default function Page() {
                   <button disabled={!puestoDestino || !textoMensaje.trim() || enviandoMensaje} onClick={async () => {
                     if (!puestoDestino || !textoMensaje.trim()) return;
                     setEnviandoMensaje(true);
-                    try { await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); const destId = puestoDestino; setTextoMensaje(''); setPuestoDestino(''); await cargarMensajesPuesto(puestoId); setHiloAbierto(destId); } catch {} finally { setEnviandoMensaje(false); }
+                    try { await authFetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: puestoDestino, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); const destId = puestoDestino; setTextoMensaje(''); setPuestoDestino(''); await cargarMensajesPuesto(puestoId); setHiloAbierto(destId); } catch {} finally { setEnviandoMensaje(false); }
                   }} style={{ marginTop: 10, padding: '9px 0', borderRadius: 8, border: 'none', background: !puestoDestino || !textoMensaje.trim() ? '#D0D0CC' : '#0D0D0D', color: !puestoDestino || !textoMensaje.trim() ? '#888888' : '#C8FF57', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                     {enviandoMensaje ? 'Enviando...' : 'Enviar'}
                   </button>
@@ -734,7 +785,7 @@ export default function Page() {
                     <button disabled={!textoMensaje.trim() || enviandoMensaje} onClick={async () => {
                       if (!textoMensaje.trim()) return;
                       setEnviandoMensaje(true);
-                      try { await fetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: hiloAbierto, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); setTextoMensaje(''); await cargarMensajesPuesto(puestoId); } catch {} finally { setEnviandoMensaje(false); }
+                      try { await authFetch(`${API}/mensajes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ puesto_origen_id: puestoId, puesto_destino_id: hiloAbierto, empleado_id: empleadoId, contenido: textoMensaje.trim() }) }); setTextoMensaje(''); await cargarMensajesPuesto(puestoId); } catch {} finally { setEnviandoMensaje(false); }
                     }} style={{ padding: '0 14px', borderRadius: 8, border: 'none', background: !textoMensaje.trim() ? '#D0D0CC' : '#0D0D0D', color: !textoMensaje.trim() ? '#888888' : '#C8FF57', fontSize: 16, cursor: 'pointer' }}>→</button>
                   </div>
                 </div>
