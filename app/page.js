@@ -81,6 +81,22 @@ function BadgeEstado({ estado }) {
   );
 }
 
+// Fecha corta simple, sin logica de vencimiento, para requerida/inicio.
+function formatFechaCorta(iso) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+}
+
+// Devuelve quien pidio la tarea y a quien se la pidieron, en texto,
+// relativo al puesto que esta mirando la pantalla.
+function direccionTarea(t, puestoId, puestos) {
+  if (t.puesto_origen_id === t.puesto_destino_id) return null; // tarea propia, sin contraparte
+  const nombrePuesto = (id) => puestos.find(p => p.id === id)?.nombre || 'otro puesto';
+  if (t.puesto_origen_id === puestoId) return `Pedi a ${nombrePuesto(t.puesto_destino_id)}`;
+  if (t.puesto_destino_id === puestoId) return `Me pidio ${nombrePuesto(t.puesto_origen_id)}`;
+  return null;
+}
+
 function formatFecha(iso) {
   if (!iso) return null;
   const d = new Date(iso);
@@ -112,7 +128,7 @@ function ordenarTareas(tareas) {
 // =============================================
 // PANEL IZQUIERDO — contexto del puesto
 // =============================================
-function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEstado, actualizandoTarea }) {
+function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEstado, actualizandoTarea, puestoId, puestos }) {
   const tareasActivas = ordenarTareas(tareasPuesto.filter(t => t.estado !== 'completada'));
   const proxVencimientos = tareasPuesto
     .filter(t => t.fecha_vencimiento && t.estado !== 'completada')
@@ -152,12 +168,20 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
         <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Tareas activas</div>
         {tareasActivas.length === 0 ? (
           <div style={{ fontSize: 12, color: '#888888', textAlign: 'center', padding: '12px 0' }}>Sin tareas activas</div>
-        ) : tareasActivas.map(t => (
+        ) : tareasActivas.map(t => {
+          const direccion = direccionTarea(t, puestoId, puestos);
+          return (
           <div key={t.id} style={{ marginBottom: 8, padding: '10px', borderRadius: 8, background: '#E8E8E4', border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : 'rgba(13,13,13,0.15)'}` }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: '#0D0D0D', marginBottom: 5, lineHeight: 1.4 }}>{t.titulo}</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
               <BadgeEstado estado={t.estado} />
               {t.prioridad === 'alta' && <span style={{ fontSize: 9, color: '#C62828', fontWeight: 600 }}>● ALTA</span>}
+            </div>
+            {direccion && <div style={{ fontSize: 10, color: '#888888', marginTop: 5 }}>{direccion}</div>}
+            <div style={{ fontSize: 10, color: '#888888', marginTop: 3 }}>
+              {t.created_at && <span>Req {formatFechaCorta(t.created_at)}</span>}
+              {t.fecha_inicio && <span> · Inicio {formatFechaCorta(t.fecha_inicio)}</span>}
+              {t.fecha_vencimiento && <span> · Venc {formatFechaCorta(t.fecha_vencimiento)}</span>}
             </div>
             {TRANSICIONES[t.estado]?.length > 0 && (
               <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
@@ -174,7 +198,8 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Proximos vencimientos */}
@@ -259,8 +284,10 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
-    if (!empresaId || paso >= 4) return;
-    setCargandoLista(true); setPuestos([]);
+    if (!empresaId) return;
+    // Se usa tanto para la lista de seleccion (paso 2) como para mostrar
+    // nombres de puestos en las tareas (paso 5, quien pidio / a quien se le pidio).
+    if (paso < 4) { setCargandoLista(true); setPuestos([]); }
     fetch(`${API}/empresas/${empresaId}/puestos`)
       .then(r => r.json()).then(data => setPuestos(Array.isArray(data) ? data : []))
       .catch(() => setError('Error al cargar puestos.')).finally(() => setCargandoLista(false));
@@ -580,6 +607,8 @@ export default function Page() {
             nombreEmpleado={nombreEmpleado}
             onCambiarEstado={cambiarEstadoTarea}
             actualizandoTarea={actualizandoTarea}
+            puestoId={puestoId}
+            puestos={puestos}
           />
         </div>
 
@@ -675,14 +704,20 @@ export default function Page() {
                 <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 32 }}>{filtroEstado === 'todas' ? 'Sin tareas asignadas' : `Sin tareas ${ESTADO_CONFIG[filtroEstado]?.label?.toLowerCase() || filtroEstado}`}</p>
               ) : tareasParaPanel.map(t => {
                 const fecha = formatFecha(t.fecha_vencimiento);
+                const direccion = direccionTarea(t, puestoId, puestos);
                 return (
                   <div key={t.id} style={{ padding: '12px', borderRadius: 10, border: `0.5px solid ${t.estado === 'bloqueada' ? '#EF9A9A' : 'rgba(13,13,13,0.15)'}`, marginBottom: 8, background: t.estado === 'completada' ? '#D8D8D4' : '#E8E8E4', opacity: t.estado === 'completada' ? 0.7 : 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: '#0D0D0D', marginBottom: 6, textDecoration: t.estado === 'completada' ? 'line-through' : 'none' }}>{t.titulo}</div>
                     {t.descripcion && <div style={{ fontSize: 12, color: '#555555', lineHeight: 1.5, marginBottom: 8 }}>{t.descripcion}</div>}
+                    {direccion && <div style={{ fontSize: 11, color: '#1565C0', marginBottom: 6 }}>{direccion}</div>}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <BadgeEstado estado={t.estado} />
                       {t.prioridad && <span style={{ fontSize: 10, color: PRIORIDAD_CONFIG[t.prioridad]?.color || '#555555', fontWeight: 500 }}>● {PRIORIDAD_CONFIG[t.prioridad]?.label || t.prioridad}</span>}
                       {fecha && <span style={{ fontSize: 10, color: fecha.vencida ? '#C62828' : '#555555', marginLeft: 'auto' }}>{fecha.vencida ? '⚠ ' : ''}{fecha.texto}</span>}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#888888', marginTop: 6, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {t.created_at && <span>Requerida: {formatFechaCorta(t.created_at)}</span>}
+                      {t.fecha_inicio && <span>Inicio: {formatFechaCorta(t.fecha_inicio)}</span>}
                     </div>
                     {TRANSICIONES[t.estado]?.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>

@@ -33,6 +33,24 @@ const ESTADO_CONFIG = {
 function estadoColor(estado) { return ESTADO_CONFIG[estado]?.bg || '#D0D0CC'; }
 function estadoTexto(estado) { return ESTADO_CONFIG[estado]?.label || estado; }
 
+function formatFecha(iso) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+}
+function esVencida(t) {
+  return !!t.fecha_vencimiento && t.estado !== 'completada' && new Date(t.fecha_vencimiento) < new Date();
+}
+
+// Quien pidio la tarea y a quien se la pidieron, relativo al puesto
+// de la tarjeta que se esta mostrando (para que el gerente vea las dos puntas).
+function direccionTarea(t, puestoTarjetaId, puestos) {
+  if (t.puesto_origen_id === t.puesto_destino_id) return null; // tarea propia, sin contraparte
+  const nombrePuesto = (id) => puestos.find(p => p.id === id)?.nombre || 'otro puesto';
+  if (t.puesto_origen_id === puestoTarjetaId) return `Pidio a ${nombrePuesto(t.puesto_destino_id)}`;
+  if (t.puesto_destino_id === puestoTarjetaId) return `Se lo pidio ${nombrePuesto(t.puesto_origen_id)}`;
+  return null;
+}
+
 function IconoMenu() {
   return (
     <span style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
@@ -126,6 +144,7 @@ export default function PanelGestion() {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
   const [tareasDashboard, setTareasDashboard] = useState([]);
+  const [puestoExpandido, setPuestoExpandido] = useState(null);
 
   // Gating: se resuelve antes de pedir cualquier dato al backend.
   useEffect(() => {
@@ -321,14 +340,40 @@ export default function PanelGestion() {
                       <div style={{ fontSize: 12, color: '#888888' }}>Sin tareas asignadas</div>
                     ) : (
                       <>
-                        {d.tareas.slice(0, 3).map(t => (
-                          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: estadoColor(t.estado) }} />
-                            <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, lineHeight: 1.4 }}>{t.titulo || t.descripcion}</div>
-                            <div style={{ fontSize: 10, color: '#555555', flexShrink: 0 }}>{estadoTexto(t.estado)}</div>
+                        {(puestoExpandido === p.id ? d.tareas : d.tareas.slice(0, 3)).map(t => {
+                          const direccion = direccionTarea(t, p.id, puestos);
+                          return (
+                          <div key={t.id} style={{ marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: estadoColor(t.estado) }} />
+                              <div style={{ fontSize: 12, color: '#0D0D0D', flex: 1, lineHeight: 1.4 }}>{t.titulo || t.descripcion}</div>
+                              <div style={{ fontSize: 10, color: '#555555', flexShrink: 0 }}>{estadoTexto(t.estado)}</div>
+                            </div>
+                            {direccion && <div style={{ fontSize: 10, color: '#1565C0', marginLeft: 16, marginTop: 2 }}>{direccion}</div>}
+                            {(t.fecha_vencimiento || t.created_at || t.fecha_inicio) && (
+                              <div style={{ fontSize: 10, color: '#888888', marginLeft: 16, marginTop: 2 }}>
+                                {t.created_at && `Requerida ${formatFecha(t.created_at)}`}
+                                {t.created_at && (t.fecha_inicio || t.fecha_vencimiento) && ' · '}
+                                {t.fecha_inicio && `Inicio ${formatFecha(t.fecha_inicio)}`}
+                                {t.fecha_inicio && t.fecha_vencimiento && ' · '}
+                                {t.fecha_vencimiento && (
+                                  <span style={{ color: esVencida(t) ? '#E53935' : '#888888', fontWeight: esVencida(t) ? 600 : 400 }}>
+                                    Vence {formatFecha(t.fecha_vencimiento)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ))}
-                        {tareasTotal > 3 && <div style={{ fontSize: 11, color: '#888888', marginTop: 4 }}>+{tareasTotal - 3} mas</div>}
+                          );
+                        })}
+                        {tareasTotal > 3 && (
+                          <button
+                            onClick={() => setPuestoExpandido(puestoExpandido === p.id ? null : p.id)}
+                            style={{ fontSize: 11, color: '#1565C0', marginTop: 2, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline' }}
+                          >
+                            {puestoExpandido === p.id ? 'Ver menos' : `+${tareasTotal - 3} mas`}
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
