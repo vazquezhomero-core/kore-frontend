@@ -126,6 +126,86 @@ function ordenarTareas(tareas) {
 }
 
 // =============================================
+// MI GESTION — indicadores del puesto como ejecutor
+// =============================================
+// Fin del dia de vencimiento en hora de Argentina (UTC-3): 23:59:59.
+function limiteVencimiento(fechaVencimiento) {
+  return new Date(`${String(fechaVencimiento).slice(0, 10)}T23:59:59.999-03:00`);
+}
+
+// Solo cuenta tareas que le pidieron al puesto (puesto ejecutor).
+function calcularGestion(tareas, puestoId) {
+  const r = { enTermino: 0, fueraTermino: 0, vencidas: 0, abiertasEnTermino: 0, sinVencimiento: 0, sinFechaCierre: 0 };
+  const ahora = new Date();
+  const tiempos = [];
+
+  tareas.filter(t => t.puesto_destino_id === puestoId).forEach(t => {
+    // Tiempo de respuesta: de requerida a inicio. Sin fecha_inicio no cuenta.
+    if (t.fecha_inicio && t.created_at) {
+      const ms = new Date(t.fecha_inicio) - new Date(t.created_at);
+      if (ms >= 0) tiempos.push(ms);
+    }
+
+    if (!t.fecha_vencimiento) { r.sinVencimiento++; return; }
+    const limite = limiteVencimiento(t.fecha_vencimiento);
+
+    if (t.estado === 'completada') {
+      if (!t.fecha_completada) { r.sinFechaCierre++; return; }
+      if (new Date(t.fecha_completada) <= limite) r.enTermino++;
+      else r.fueraTermino++;
+      return;
+    }
+
+    if (ahora > limite) r.vencidas++;
+    else r.abiertasEnTermino++;
+  });
+
+  r.respuestaPromedioMs = tiempos.length ? tiempos.reduce((a, b) => a + b, 0) / tiempos.length : null;
+  r.respuestaMuestras = tiempos.length;
+  return r;
+}
+
+function formatDuracion(ms) {
+  if (ms === null) return '-';
+  const horas = ms / (1000 * 60 * 60);
+  if (horas < 1) return 'menos de 1 h';
+  if (horas < 24) return `${Math.round(horas)} h`;
+  return `${(horas / 24).toFixed(1).replace('.', ',')} dias`;
+}
+
+function BloqueGestion({ tareasPuesto, puestoId }) {
+  const g = calcularGestion(tareasPuesto, puestoId);
+  const ROJO = '#E53935';
+  const items = [
+    { label: 'Completadas en termino', value: g.enTermino },
+    { label: 'Completadas fuera de termino', value: g.fueraTermino },
+    { label: 'Vencidas sin completar', value: g.vencidas },
+    { label: 'Abiertas en termino', value: g.abiertasEnTermino },
+  ];
+  if (g.sinVencimiento > 0) items.push({ label: 'Sin vencimiento', value: g.sinVencimiento });
+  if (g.sinFechaCierre > 0) items.push({ label: 'Completadas sin fecha de cierre', value: g.sinFechaCierre });
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 2 }}>Mi gestion</div>
+      <div style={{ fontSize: 10, color: '#888888', marginBottom: 8 }}>Tareas que te pidieron</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        {items.map(c => (
+          <div key={c.label} style={{ background: '#E8E8E4', border: '0.5px solid rgba(13,13,13,0.15)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 300, color: ROJO, lineHeight: 1 }}>{c.value}</div>
+            <div style={{ fontSize: 9, color: '#555555', marginTop: 3, letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.3 }}>{c.label}</div>
+          </div>
+        ))}
+        <div style={{ gridColumn: '1 / -1', background: '#E8E8E4', border: '0.5px solid rgba(13,13,13,0.15)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+          <div style={{ fontSize: 18, fontWeight: 300, color: ROJO, lineHeight: 1 }}>{formatDuracion(g.respuestaPromedioMs)}</div>
+          <div style={{ fontSize: 9, color: '#555555', marginTop: 3, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Tiempo de respuesta promedio</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // PANEL IZQUIERDO — contexto del puesto
 // =============================================
 function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEstado, actualizandoTarea, puestoId, puestos }) {
@@ -163,6 +243,9 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
         ))}
       </div>
 
+      {/* Mi gestion */}
+      <BloqueGestion tareasPuesto={tareasPuesto} puestoId={puestoId} />
+
       {/* Tareas activas */}
       <div>
         <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#888888', marginBottom: 8 }}>Tareas activas</div>
@@ -183,7 +266,7 @@ function PanelContexto({ tareasPuesto, puestoNombre, nombreEmpleado, onCambiarEs
               {t.fecha_inicio && <span> · Inicio {formatFechaCorta(t.fecha_inicio)}</span>}
               {t.fecha_vencimiento && <span> · Venc {formatFechaCorta(t.fecha_vencimiento)}</span>}
             </div>
-            {TRANSICIONES[t.estado]?.length > 0 && (
+            {t.puesto_destino_id === puestoId && TRANSICIONES[t.estado]?.length > 0 && (
               <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
                 {TRANSICIONES[t.estado].map(({ accion, estado: nuevoEstado }) => {
                   const esPrimario = accion !== 'Bloquear';
@@ -719,7 +802,7 @@ export default function Page() {
                       {t.created_at && <span>Requerida: {formatFechaCorta(t.created_at)}</span>}
                       {t.fecha_inicio && <span>Inicio: {formatFechaCorta(t.fecha_inicio)}</span>}
                     </div>
-                    {TRANSICIONES[t.estado]?.length > 0 && (
+                    {t.puesto_destino_id === puestoId && TRANSICIONES[t.estado]?.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
                         {TRANSICIONES[t.estado].map(({ accion, estado: nuevoEstado }) => {
                           const esPrimario = accion !== 'Bloquear';
